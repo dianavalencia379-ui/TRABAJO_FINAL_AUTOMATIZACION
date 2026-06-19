@@ -267,14 +267,14 @@ Parity (HRP)
 
 **11. Fases de desarrollo**
 
-    **Fase 1.** Preparación del proyecto
+   **Fase 1. Preparación del proyecto**
     Tareas principales:
     ● Crear la estructura de carpetas.
     ● Crear app.py, config.py y requisitos.txt.
     ● Instalar dependencias y comprobar que Streamlit arranca correctamente.
     Entregable: Estructura base del proyecto creado y aplicación inicial ejecutándose.
     
-    **Fase 2.** Base de datos
+   **Fase 2. Base de datos**
     Tareas principales:
     ● Diseñar las tablas necesarias.
     ● Crear data_layer/db.py.
@@ -282,7 +282,7 @@ Parity (HRP)
     ● Insertar usuarios, portafolios, posiciones e histórico ficticio.
     Entregable: Base de datos funcionales con usuarios, portafolios, posiciones e histórico precargado.
     
-    **Fase 3.** Motor de cartera
+   **Fase 3. Motor de cartera**
     Tareas principales:
     ● Calcular el valor actual de cada posición.
     ● Calcular valor total del portafolio.
@@ -290,14 +290,14 @@ Parity (HRP)
     ● Preparar datos para tablas y gráficos.
     Entregable: Motor capaz de calcular valores, pesos y composición de cartera.
     
-    **Fase 4.** Evolución histórica
+   **Fase 4. Evolución histórica**
     Tareas principales:
     ● Generar series ficticias de evolución.
     ● Guardar la evolución en la base de datos.
     ● Calcular rentabilidad acumulada, anualizada y drawdown.
     Entregable: Módulo de evolución histórica funcionando con datos ficticios.
     
-    **Fase 5.** Motor HRP
+   **Fase 5. Motor HRP**
     Tareas principales:
     ● Obtener precios históricos.
     ● Calcular rentabilidades y correlaciones.
@@ -305,49 +305,49 @@ Parity (HRP)
     ● Calcular pesos recomendados por HRP.
     Entregable: Motor HRP funcional que devuelve pesos recomendados.
     
-    **Fase 6.** Advisor de rebalanceo
+   **Fase 6. Advisor de rebalanceo**
     Tareas principales:
     ● Comparar pesos actuales y pesos HRP.
     ● Calcular diferencias.
     ● Clasificar acciones como aumentar, reducir o mantener.
     Entregable: Asesor de reequilibrio con recomendaciones interpretables.
     
-    **Fase 7.** Interfaz Streamlit
+   **Fase 7. Interfaz Streamlit**
     Tareas principales:
     ● Crear selector lateral de usuario.
     ● Crear pestañas de resumen, portafolio, asesor, evolución e informes.
     ● Añadir gráficos y tablas.
     Entregable: Dashboard web completo con datos dinámicos por usuario.
     
-    **Fase 8.** Informes PDF
+   **Fase 8. Informes PDF**
     Tareas principales:
     ● Crear informes/pdf_generator.py.
     ● Diseñar estructura del informe.
     ● Permitir descarga desde la interfaz.
     Entregable: Informe PDF generado automáticamente para cada usuario.
     
-    **Fase 9.** API
+   **Fase 9. API**
     Tareas principales:
     ● Crear api.py.
     ● Crear punto final /api/report/{user_id}.
     ● Conectar API, base de datos y generador de PDF.
     Entregable: API funcional para solicitar informes financieros.
     
-    **Fase 10.** Automatización
+   **Fase 10. Automatización**
     Tareas principales:
     ● Definir flujo trimestral en Zapier o Make.
     ● Documentar llamada HTTP y envío por correo electrónico.
     ● Incluir esquema o captura del proceso.
     Entregable: Diseño documentado de automatización trimestral.
     
-    **Fase 11.** Pruebas
+   **Fase 11. Pruebas**
     Tareas principales:
     ● Probar cálculo de pesos de la cartera.
     ● Comprobar que los pesos HRP suman 1.
     ● Probar generación de informes y endpoint API.
     Entregable: Funciones principales validadas.
     
-    **Fase 12.** Documentación final
+  **Fase 12. Documentación final**
     Tareas principales:
     ● Redactar descripción del proyecto.
     ● Explicar arquitectura, base de datos, HRP y automatización.
