@@ -268,6 +268,7 @@ Parity (HRP)
 **11. Fases de desarrollo**
 
    **Fase 1. Preparación del proyecto**
+   
       Tareas principales:
        ● Crear la estructura de carpetas.
        ● Crear app.py, config.py y requisitos.txt.
@@ -275,6 +276,7 @@ Parity (HRP)
       Entregable: Estructura base del proyecto creado y aplicación inicial ejecutándose.
      
    **Fase 2. Base de datos**
+   
       Tareas principales:
        ● Diseñar las tablas necesarias.
        ● Crear data_layer/db.py.
@@ -283,6 +285,7 @@ Parity (HRP)
       Entregable: Base de datos funcionales con usuarios, portafolios, posiciones e histórico precargado.
       
    **Fase 3. Motor de cartera**
+   
       Tareas principales:
        ● Calcular el valor actual de cada posición.
        ● Calcular valor total del portafolio.
@@ -291,6 +294,7 @@ Parity (HRP)
       Entregable: Motor capaz de calcular valores, pesos y composición de cartera.
      
    **Fase 4. Evolución histórica**
+   
       Tareas principales:
        ● Generar series ficticias de evolución.
        ● Guardar la evolución en la base de datos.
@@ -298,6 +302,7 @@ Parity (HRP)
       Entregable: Módulo de evolución histórica funcionando con datos ficticios.
        
    **Fase 5. Motor HRP**
+   
       Tareas principales:
        ● Obtener precios históricos.
        ● Calcular rentabilidades y correlaciones.
@@ -306,6 +311,7 @@ Parity (HRP)
       Entregable: Motor HRP funcional que devuelve pesos recomendados.
       
    **Fase 6. Advisor de rebalanceo**
+   
       Tareas principales:
        ● Comparar pesos actuales y pesos HRP.
        ● Calcular diferencias.
@@ -313,6 +319,7 @@ Parity (HRP)
       Entregable: Asesor de reequilibrio con recomendaciones interpretables.
      
    **Fase 7. Interfaz Streamlit**
+   
       Tareas principales:
        ● Crear selector lateral de usuario.
        ● Crear pestañas de resumen, portafolio, asesor, evolución e informes.
@@ -320,6 +327,7 @@ Parity (HRP)
       Entregable: Dashboard web completo con datos dinámicos por usuario.
     
    **Fase 8. Informes PDF**
+   
       Tareas principales:
        ● Crear informes/pdf_generator.py.
        ● Diseñar estructura del informe.
@@ -327,6 +335,7 @@ Parity (HRP)
       Entregable: Informe PDF generado automáticamente para cada usuario.
       
    **Fase 9. API**
+   
       Tareas principales:
        ● Crear api.py.
        ● Crear punto final /api/report/{user_id}.
@@ -334,6 +343,7 @@ Parity (HRP)
       Entregable: API funcional para solicitar informes financieros.
       
    **Fase 10. Automatización**
+   
       Tareas principales:
        ● Definir flujo trimestral en Zapier o Make.
        ● Documentar llamada HTTP y envío por correo electrónico.
@@ -341,6 +351,7 @@ Parity (HRP)
       Entregable: Diseño documentado de automatización trimestral.
      
    **Fase 11. Pruebas**
+   
       Tareas principales:
        ● Probar cálculo de pesos de la cartera.
        ● Comprobar que los pesos HRP suman 1.
@@ -348,6 +359,7 @@ Parity (HRP)
       Entregable: Funciones principales validadas.
     
   **Fase 12. Documentación final**
+  
       Tareas principales:
        ● Redactar descripción del proyecto.
        ● Explicar arquitectura, base de datos, HRP y automatización.
