@@ -204,6 +204,68 @@ def get_portfolio_summaries(connection: sqlite3.Connection) -> list[sqlite3.Row]
     ).fetchall()
 
 
+def get_users(connection: sqlite3.Connection) -> list[sqlite3.Row]:
+    return connection.execute(
+        """
+        SELECT
+            u.id AS user_id,
+            u.name AS user_name,
+            u.email AS user_email,
+            u.created_at AS created_at,
+            COUNT(DISTINCT p.id) AS portfolio_count,
+            COUNT(DISTINCT pos.id) AS position_count,
+            ROUND(COALESCE(SUM(pos.quantity * pos.avg_price), 0), 2) AS invested_amount
+        FROM users u
+        LEFT JOIN portfolios p ON p.user_id = u.id
+        LEFT JOIN positions pos ON pos.portfolio_id = p.id
+        GROUP BY u.id, u.name, u.email, u.created_at
+        ORDER BY u.name, u.id
+        """
+    ).fetchall()
+
+
+def get_user_portfolios(
+    connection: sqlite3.Connection,
+    *,
+    user_email: str | None = None,
+    user_id: int | None = None,
+) -> list[sqlite3.Row]:
+    query = """
+        SELECT
+            p.id AS portfolio_id,
+            p.name AS portfolio_name,
+            p.created_at AS created_at,
+            u.id AS user_id,
+            u.name AS user_name,
+            u.email AS user_email,
+            COUNT(pos.id) AS position_count,
+            ROUND(COALESCE(SUM(pos.quantity * pos.avg_price), 0), 2) AS invested_amount
+        FROM portfolios p
+        JOIN users u ON u.id = p.user_id
+        LEFT JOIN positions pos ON pos.portfolio_id = p.id
+    """
+    filters: list[str] = []
+    parameters: list[Any] = []
+
+    if user_email is not None:
+        filters.append("u.email = ?")
+        parameters.append(user_email)
+
+    if user_id is not None:
+        filters.append("u.id = ?")
+        parameters.append(user_id)
+
+    if filters:
+        query = f"{query} WHERE {' AND '.join(filters)}"
+
+    query = f"""
+        {query}
+        GROUP BY p.id, p.name, p.created_at, u.id, u.name, u.email
+        ORDER BY p.id
+    """
+    return connection.execute(query, parameters).fetchall()
+
+
 def get_portfolio_history_series(
     connection: sqlite3.Connection,
     *,
