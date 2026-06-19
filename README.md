@@ -86,87 +86,51 @@ Parity (HRP)
  claro, mantenible y fácil de explicar en la memoria.
 
 
-  Dashboard_Financiero/
-  
-  |
-  
-  |-- app.py
-  
-  |-- api.py
-  
-  |-- config.py
-  
-  |-- requirements.txt
-  
-  |
-  
-  |-- data_layer/
-  
-  | |-- db.py
-  
-  | |-- yahoo_client.py
-  
-  | |-- seed_data.py
-  
-  |
-  
-  |-- domain/
-  
-  | |-- portfolio_engine.py
-  
-  | |-- hrp_engine.py
-  
-  | |-- rebalance_engine.py
-  
-  | |-- evolution_engine.py
-  
-  |
-  
-  |-- ui/
-  
-  | |-- tab_overview.py
-  
-  | |-- tab_portfolio.py
-  
-  | |-- tab_advisor.py
-  
-  | |-- tab_evolution.py
-  
-  | |-- tab_reports.py
-  
-  |
-  
-  |-- reports/
-  
-  | |-- pdf_generator.py
-  
-  |
-  
-  |-- scripts/
-  
-  | |-- init_db.py
-  
-  |
-  
-  |-- tests/
-  
-  |-- test_hrp_engine.py
-  
-  |-- test_portfolio_engine.py
-  
-  |-- test_rebalance_engine.py
-  
-  Carpeta / archivo Responsabilidad
-  
-  
-  app.py Punto de entrada de la aplicación Streamlit.
-  api.py APIexternas.^ para^ generación de^ informes^ desde^ herramientas^
-  data_layer Conexión con base de datos y fuentes de datos financieros.
-  domain Lógica de negocio: portfolio, HRP, rebalanceo y evolución.
-  ui Pestañas visuales del dashboard.
-  reports Generación de informes PDF.
-  scripts Inicialización y carga de datos ficticios.
-  tests Pruebas unitarias del proyecto.
+ Dashboard_Financiero/
+|
+|-- app.py
+|-- api.py
+|-- config.py
+|-- requirements.txt
+|
+|-- data_layer/
+| |-- db.py
+| |-- yahoo_client.py
+| |-- seed_data.py
+|
+|-- domain/
+| |-- portfolio_engine.py
+| |-- hrp_engine.py
+| |-- rebalance_engine.py
+| |-- evolution_engine.py
+|
+|-- ui/
+| |-- tab_overview.py
+| |-- tab_portfolio.py
+| |-- tab_advisor.py
+| |-- tab_evolution.py
+| |-- tab_reports.py
+|
+|-- reports/
+| |-- pdf_generator.py
+|
+|-- scripts/
+| |-- init_db.py
+|
+|-- tests/
+|-- test_hrp_engine.py
+|-- test_portfolio_engine.py
+|-- test_rebalance_engine.py
+Carpeta / archivo Responsabilidad
+app.py Punto de entrada de la aplicación Streamlit.
+api.py APIexternas.^ para^ generación de^ informes^ desde^ herramientas^
+data_layer Conexión con base de datos y fuentes de datos financieros.
+domain Lógica de negocio: portfolio, HRP, rebalanceo y evolución.
+ui Pestañas visuales del dashboard.
+reports Generación de informes PDF.
+scripts Inicialización y carga de datos ficticios.
+tests Pruebas unitarias del proyecto.
+
 
 **5. Diseño de la base de datos**
 
@@ -181,22 +145,22 @@ Parity (HRP)
 
 *5.1. Relación entre tablas*
 
- ● Un usuario puede tener uno o varios portafolios.
- ● Cada portafolio pertenece a un único usuario.
- ● Cada cartera puede contener múltiples posiciones financieras.
- ● Cada portafolio tendrá una serie histórica ficticia asociada.
- ● El tablero consultará la base de datos en función del usuario seleccionado.
+  ● Un usuario puede tener uno o varios portafolios.
+  ● Cada portafolio pertenece a un único usuario.
+  ● Cada cartera puede contener múltiples posiciones financieras.
+  ● Cada portafolio tendrá una serie histórica ficticia asociada.
+  ● El tablero consultará la base de datos en función del usuario seleccionado.
 
-**6. Diseño de la interfaz de usuario**
-
- La aplicación tendrá una interfaz principal en Streamlit con un selector lateral de usuario. Al seleccionar un
- usuario, todas las pestañas se actualizarán con la información correspondiente a su portafolio.
- Pestaña Contenido previsto
- Resumen Visiónactivos^ general y métricas^ del^ usuario,principales.^ valor del^ portfolio,^ número^ de^
- Portfolio Tablacomposición.^ de^ posiciones, pesos^ actuales^ y^ gráficos^ de^
- Advisor HRP Cálculorebalanceo.^ de^ pesos óptimos^ mediante^ HRP^ y^ propuesta^ de^
- Evolución Gráficorendimiento.^ histórico ficticio^ del^ valor^ del^ portfolio^ y^ métricas^ de^
- Informes Generacióno Make. de^ PDF^ y^ explicación^ de^ integración^ con^ Zapier^
+ **6. Diseño de la interfaz de usuario**
+ 
+  La aplicación tendrá una interfaz principal en Streamlit con un selector lateral de usuario. Al seleccionar un
+  usuario, todas las pestañas se actualizarán con la información correspondiente a su portafolio.
+  Pestaña Contenido previsto
+  Resumen Visiónactivos^ general y métricas^ del^ usuario,principales.^ valor del^ portfolio,^ número^ de^
+  Portfolio Tablacomposición.^ de^ posiciones, pesos^ actuales^ y^ gráficos^ de^
+  Advisor HRP Cálculorebalanceo.^ de^ pesos óptimos^ mediante^ HRP^ y^ propuesta^ de^
+  Evolución Gráficorendimiento.^ histórico ficticio^ del^ valor^ del^ portfolio^ y^ métricas^ de^
+  Informes Generacióno Make. de^ PDF^ y^ explicación^ de^ integración^ con^ Zapier^
 
 **7. Módulo Asesor HRP**
 
