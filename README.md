@@ -1,4 +1,5 @@
 **Panel de control_Financiero**
+
 *Plan de trabajo detallado*
 
 Aplicación web multiusuario para gestión de carteras, asesor HRP, evolución histórica e
