@@ -215,48 +215,48 @@ Parity (HRP)
 **9. Informes PDF y automatización trimestral**
 
  *9.1. Informe PDF*
-   El informe financiero incluye los siguientes apartados:
-    ● Datos del usuario.
-    ● Nombre del portafolio.
-    ● Composición actual de la cartera.
-    ● Valor total estimado.
-    ● Evolución histórica.
-    ● Pesos actuales.
-    ● Pesos recomendados por HRP.
-    ● Tabla de reequilibrio.
-    ● Comentario final del asesor.
-    ● Aviso de uso académico.
+    El informe financiero incluye los siguientes apartados:
+     ● Datos del usuario.
+     ● Nombre del portafolio.
+     ● Composición actual de la cartera.
+     ● Valor total estimado.
+     ● Evolución histórica.
+     ● Pesos actuales.
+     ● Pesos recomendados por HRP.
+     ● Tabla de reequilibrio.
+     ● Comentario final del asesor.
+     ● Aviso de uso académico.
 
 *9.2. API para automatización externa*
-  Se desarrollará una API mediante FastAPI para permitir que una herramienta externa solicite la generación
-  del informe de un usuario. El punto final previsto será:
-  POST /api/report/{user_id}
-  Funcionamiento previsto:
-  La herramienta externa realiza una petición al endpoint.
-  La API busca el usuario en la base de datos.
-  La API obtiene su portfolio.
-  Se genera el informe PDF.
-  La API devuelve el estado de la operación, el correo del usuario, el portafolio y la ruta o enlace del PDF
-  generado.
+   Se desarrollará una API mediante FastAPI para permitir que una herramienta externa solicite la generación
+   del informe de un usuario. El punto final previsto será:
+   POST /api/report/{user_id}
+   Funcionamiento previsto:
+   La herramienta externa realiza una petición al endpoint.
+   La API busca el usuario en la base de datos.
+   La API obtiene su portfolio.
+   Se genera el informe PDF.
+   La API devuelve el estado de la operación, el correo del usuario, el portafolio y la ruta o enlace del PDF
+   generado.
 
 *9.3. Flujo con Zapier o Make*
-  Elemento Configuración prevista
-  Trigger Schedule
-  Frecuencia Cada 3 meses
-  Acción 1 HTTP Request a la API del dashboard
-  Método POST
-  URL https://dashboard-financiero.com/api/report/{user_id}
-  Acción 2 Enviar email al correo devuelto por la API
-  Adjunto Informe PDF generado automáticamente
+   Elemento Configuración prevista
+   Trigger Schedule
+   Frecuencia Cada 3 meses
+   Acción 1 HTTP Request a la API del dashboard
+   Método POST
+   URL https://dashboard-financiero.com/api/report/{user_id}
+   Acción 2 Enviar email al correo devuelto por la API
+   Adjunto Informe PDF generado automáticamente
 
 **10. Datos ficticios de demostración**
 
-  Para que la aplicación pueda demostrarse sin dependencia de usuarios reales, se precargarán tres usuarios
-  ficticios. Cada uno tendrá un portafolio y una evolución histórica distinta.
-  Usuario Email Portfolio Activos
-  Diana Valencia diana@example.com Crecimiento USA AAPL,GOOGL,^ MSFT, AMZN^ NVDA,
-  Antonio Ruiz antonio@example.com Defensive Global JNJ, PG, KO, PEP, V
-  Jose Pardo jose@example.com Tech Balanced AAPL,QQQ AMD,^ MSFT,^ META,^
+   Para que la aplicación pueda demostrarse sin dependencia de usuarios reales, se precargarán tres usuarios
+   ficticios. Cada uno tendrá un portafolio y una evolución histórica distinta.
+   Usuario Email Portfolio Activos
+   Diana Valencia diana@example.com Crecimiento USA AAPL,GOOGL,^ MSFT, AMZN^ NVDA,
+   Antonio Ruiz antonio@example.com Defensive Global JNJ, PG, KO, PEP, V
+   Jose Pardo jose@example.com Tech Balanced AAPL,QQQ AMD,^ MSFT,^ META,^
 
 **11. Fases de desarrollo**
 
@@ -350,19 +350,19 @@ Parity (HRP)
 **12. Prioridades, riesgos y soluciones**
 
   *12.1. Reparto de prioridades*
-   Nivel de prioridad Elementos incluidos
-   Alta
-   Base de datos multiusuario, portfolio por usuario, dashboard
-   funcional, advisor HRP, evolución histórica, informe PDF y
-   API.
-   Media Gráficosy mejoras^ más visuales.^ elaborados, métricas^ avanzadas,^ test^ unitarios^
-   Baja Logindesde^ real, backend^ despliegue y seguridad^ en^ la^ nube,avanzada.^ envío real^ de^ emails^
-   Riesgo Solución prevista
-   Fallo al descargar datos financieros Usar datos ficticios o precios simulados como respaldo.
-   Complejidad del método HRP Implementarque los pesos^ una sumen^ versión 1. simplificada^ pero^ funcional^ y^ validar^
-   Falta de tiempo para automatización real Desarrollar la API y documentar el flujo con Zapier o Make.
-   Informes PDF demasiado complejos Crearresumen^ un^ informetextual.^ sencillo^ pero^ completo,^ priorizando^ tablas^ y^
-
+    Nivel de prioridad Elementos incluidos
+    Alta
+    Base de datos multiusuario, portfolio por usuario, dashboard
+    funcional, advisor HRP, evolución histórica, informe PDF y
+    API.
+    Media Gráficosy mejoras^ más visuales.^ elaborados, métricas^ avanzadas,^ test^ unitarios^
+    Baja Logindesde^ real, backend^ despliegue y seguridad^ en^ la^ nube,avanzada.^ envío real^ de^ emails^
+    Riesgo Solución prevista
+    Fallo al descargar datos financieros Usar datos ficticios o precios simulados como respaldo.
+    Complejidad del método HRP Implementarque los pesos^ una sumen^ versión 1. simplificada^ pero^ funcional^ y^ validar^
+    Falta de tiempo para automatización real Desarrollar la API y documentar el flujo con Zapier o Make.
+    Informes PDF demasiado complejos Crearresumen^ un^ informetextual.^ sencillo^ pero^ completo,^ priorizando^ tablas^ y^
+ 
 **13. Resultado final esperado**
 
   Al finalizar el desarrollo, se dispondrá de una aplicación web funcional llamada Dashboard_Financiero,
@@ -372,28 +372,29 @@ Parity (HRP)
   Además, el sistema incluye una API preparada para integrarse con Zapier o Make, permitiendo automatizar
   el envío trimestral de informes al correo electrónico de cada usuario.
   Con este proyecto se demuestra el uso conjunto de:
-     ● Desarrollo web con Python.
-     ● Persistencia en base de datos.
-     ● Automatización de procesos.
-     ● Análisis financiero.
-     ● Optimización de carteras.
-     ● Generación de informes.
-     ● Integración con herramientas externas.
+  
+      ● Desarrollo web con Python.
+      ● Persistencia en base de datos.
+      ● Automatización de procesos.
+      ● Análisis financiero.
+      ● Optimización de carteras.
+      ● Generación de informes.
+      ● Integración con herramientas externas.
 
 **14. Lista de verificación final de entrega**
 
-   Elemento Estado esperado
-   Aplicación Streamlit Arranca correctamente y permite seleccionar usuario.
-   Base de datos SQLite Contiene usuarios, portfolios, posiciones e histórico.
-   Portfolio por usuario Cada usuario muestra una cartera distinta.
-   Advisor HRP Genera pesos recomendados y tabla de rebalanceo.
-   Evolución histórica Muestra datos ficticios de varios años.
-   Informe PDF Se puede generar y descargar.
-   API Permite solicitar informe por user_id.
-   Zapier/Make Flujo trimestral explicado y documentado.
-   README Incluye instalación, uso y explicación del proyecto.
-   Memoria Explicaconclusiones.^ arquitectura, base^ de^ datos,^ HRP,^ resultados^ y^
-   Cierre
-   Este plan puede utilizarse como guía de desarrollo y como base para redactar la memoria final del proyecto. La
- prioridad será conseguir una aplicación funcional, visualmente clara y alineada con los requisitos: multiusuario,
- portafolio por usuario, asesor HRP, informes trimestrales y evolución histórica ficticia.
+    Elemento Estado esperado
+    Aplicación Streamlit Arranca correctamente y permite seleccionar usuario.
+    Base de datos SQLite Contiene usuarios, portfolios, posiciones e histórico.
+    Portfolio por usuario Cada usuario muestra una cartera distinta.
+    Advisor HRP Genera pesos recomendados y tabla de rebalanceo.
+    Evolución histórica Muestra datos ficticios de varios años.
+    Informe PDF Se puede generar y descargar.
+    API Permite solicitar informe por user_id.
+    Zapier/Make Flujo trimestral explicado y documentado.
+    README Incluye instalación, uso y explicación del proyecto.
+    Memoria Explicaconclusiones.^ arquitectura, base^ de^ datos,^ HRP,^ resultados^ y^
+    Cierre
+    Este plan puede utilizarse como guía de desarrollo y como base para redactar la memoria final del proyecto. La
+  prioridad será conseguir una aplicación funcional, visualmente clara y alineada con los requisitos: multiusuario,
+  portafolio por usuario, asesor HRP, informes trimestrales y evolución histórica ficticia.
