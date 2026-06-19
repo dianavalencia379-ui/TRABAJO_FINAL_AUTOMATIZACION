@@ -1,4 +1,4 @@
-# **Panel de control_Financiero**
+# **Panel De Control Financiero**
 
 ***Plan de trabajo detallado***
 
