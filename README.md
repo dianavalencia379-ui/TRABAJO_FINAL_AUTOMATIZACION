@@ -53,18 +53,19 @@ Parity (HRP)
 **2. Alcance funcional**
 
  El sistema incluye las siguientes funcionalidades principales:
-  ● Gestión de múltiples usuarios desde una base de datos.
-  ● Asociación de cada usuario con un portafolio propio.
-  ● Almacenamiento de usuarios, carteras, posiciones e histórico de evolución.
-  ● Visualización del estado actual de cada cartera.
-  ● Cálculo de pesos actuales de cada activo dentro del portafolio.
-  ● Descarga o simulación de datos históricos de mercado.
-  ● Aplicación del método HRP para obtener una asignación recomendada.
-  ● Generación de una tabla de reequilibrio con acciones sugeridas.
-  ● Visualización de la evolución histórica ficticia del portafolio.
-  ● Generación de informes financieros en PDF.
-  ● Exposición de una API para automatizar el envío trimestral de informes mediante Zapier o Make.
-  ● Inclusión de datos ficticios precargados para facilitar la demostración del sistema.
+ 
+     ● Gestión de múltiples usuarios desde una base de datos.
+     ● Asociación de cada usuario con un portafolio propio.
+     ● Almacenamiento de usuarios, carteras, posiciones e histórico de evolución.
+     ● Visualización del estado actual de cada cartera.
+     ● Cálculo de pesos actuales de cada activo dentro del portafolio.
+     ● Descarga o simulación de datos históricos de mercado.
+     ● Aplicación del método HRP para obtener una asignación recomendada.
+     ● Generación de una tabla de reequilibrio con acciones sugeridas.
+     ● Visualización de la evolución histórica ficticia del portafolio.
+     ● Generación de informes financieros en PDF.
+     ● Exposición de una API para automatizar el envío trimestral de informes mediante Zapier o Make.
+     ● Inclusión de datos ficticios precargados para facilitar la demostración del sistema.
  
 **3. Tecnologías previstas**
 
