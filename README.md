@@ -214,40 +214,40 @@ Parity (HRP)
 
 **9. Informes PDF y automatización trimestral**
 
- *9.1. Informe PDF*
-    El informe financiero incluye los siguientes apartados:
-     ● Datos del usuario.
-     ● Nombre del portafolio.
-     ● Composición actual de la cartera.
-     ● Valor total estimado.
-     ● Evolución histórica.
-     ● Pesos actuales.
-     ● Pesos recomendados por HRP.
-     ● Tabla de reequilibrio.
-     ● Comentario final del asesor.
-     ● Aviso de uso académico.
+  *9.1. Informe PDF*
+     El informe financiero incluye los siguientes apartados:
+      ● Datos del usuario.
+      ● Nombre del portafolio.
+      ● Composición actual de la cartera.
+      ● Valor total estimado.
+      ● Evolución histórica.
+      ● Pesos actuales.
+      ● Pesos recomendados por HRP.
+      ● Tabla de reequilibrio.
+      ● Comentario final del asesor.
+      ● Aviso de uso académico.
 
-*9.2. API para automatización externa*
-   Se desarrollará una API mediante FastAPI para permitir que una herramienta externa solicite la generación
-   del informe de un usuario. El punto final previsto será:
-   POST /api/report/{user_id}
-   Funcionamiento previsto:
-   La herramienta externa realiza una petición al endpoint.
-   La API busca el usuario en la base de datos.
-   La API obtiene su portfolio.
-   Se genera el informe PDF.
-   La API devuelve el estado de la operación, el correo del usuario, el portafolio y la ruta o enlace del PDF
-   generado.
+  *9.2. API para automatización externa*
+     Se desarrollará una API mediante FastAPI para permitir que una herramienta externa solicite la generación
+     del informe de un usuario. El punto final previsto será:
+     POST /api/report/{user_id}
+     Funcionamiento previsto:
+     La herramienta externa realiza una petición al endpoint.
+     La API busca el usuario en la base de datos.
+     La API obtiene su portfolio.
+     Se genera el informe PDF.
+     La API devuelve el estado de la operación, el correo del usuario, el portafolio y la ruta o enlace del PDF
+     generado.
 
-*9.3. Flujo con Zapier o Make*
-   Elemento Configuración prevista
-   Trigger Schedule
-   Frecuencia Cada 3 meses
-   Acción 1 HTTP Request a la API del dashboard
-   Método POST
-   URL https://dashboard-financiero.com/api/report/{user_id}
-   Acción 2 Enviar email al correo devuelto por la API
-   Adjunto Informe PDF generado automáticamente
+  *9.3. Flujo con Zapier o Make*
+     Elemento Configuración prevista
+     Trigger Schedule
+     Frecuencia Cada 3 meses
+     Acción 1 HTTP Request a la API del dashboard
+     Método POST
+     URL https://dashboard-financiero.com/api/report/{user_id}
+     Acción 2 Enviar email al correo devuelto por la API
+     Adjunto Informe PDF generado automáticamente
 
 **10. Datos ficticios de demostración**
 
@@ -350,18 +350,19 @@ Parity (HRP)
 **12. Prioridades, riesgos y soluciones**
 
   *12.1. Reparto de prioridades*
-    Nivel de prioridad Elementos incluidos
-    Alta
-    Base de datos multiusuario, portfolio por usuario, dashboard
-    funcional, advisor HRP, evolución histórica, informe PDF y
-    API.
-    Media Gráficosy mejoras^ más visuales.^ elaborados, métricas^ avanzadas,^ test^ unitarios^
-    Baja Logindesde^ real, backend^ despliegue y seguridad^ en^ la^ nube,avanzada.^ envío real^ de^ emails^
-    Riesgo Solución prevista
-    Fallo al descargar datos financieros Usar datos ficticios o precios simulados como respaldo.
-    Complejidad del método HRP Implementarque los pesos^ una sumen^ versión 1. simplificada^ pero^ funcional^ y^ validar^
-    Falta de tiempo para automatización real Desarrollar la API y documentar el flujo con Zapier o Make.
-    Informes PDF demasiado complejos Crearresumen^ un^ informetextual.^ sencillo^ pero^ completo,^ priorizando^ tablas^ y^
+  
+     Nivel de prioridad Elementos incluidos
+     Alta
+     Base de datos multiusuario, portfolio por usuario, dashboard
+     funcional, advisor HRP, evolución histórica, informe PDF y
+     API.
+     Media Gráficosy mejoras^ más visuales.^ elaborados, métricas^ avanzadas,^ test^ unitarios^
+     Baja Logindesde^ real, backend^ despliegue y seguridad^ en^ la^ nube,avanzada.^ envío real^ de^ emails^
+     Riesgo Solución prevista
+     Fallo al descargar datos financieros Usar datos ficticios o precios simulados como respaldo.
+     Complejidad del método HRP Implementarque los pesos^ una sumen^ versión 1. simplificada^ pero^ funcional^ y^ validar^
+     Falta de tiempo para automatización real Desarrollar la API y documentar el flujo con Zapier o Make.
+     Informes PDF demasiado complejos Crearresumen^ un^ informetextual.^ sencillo^ pero^ completo,^ priorizando^ tablas^ y^
  
 **13. Resultado final esperado**
 
