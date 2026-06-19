@@ -392,6 +392,7 @@ Parity (HRP)
 **14. Lista de verificación final de entrega**
 
   |Elemento | Estado esperado |
+  |----------------------|-----------------------------------------------------|
   |Aplicación Streamlit | Arranca correctamente y permite seleccionar usuario.|
   |Base de datos SQLite |Contiene usuarios, portfolios, posiciones e histórico.|
   |Portfolio por usuario | Cada usuario muestra una cartera distinta.|
