@@ -257,9 +257,10 @@ Parity (HRP)
    Para que la aplicación pueda demostrarse sin dependencia de usuarios reales, se precargarán tres usuarios
    ficticios. Cada uno tendrá un portafolio y una evolución histórica distinta.
    Usuario Email Portfolio Activos
-   Diana Valencia diana@example.com Crecimiento USA AAPL,GOOGL,^ MSFT, AMZN^ NVDA,
-   Antonio Ruiz antonio@example.com Defensive Global JNJ, PG, KO, PEP, V
-   Jose Pardo jose@example.com Tech Balanced AAPL,QQQ AMD,^ MSFT,^ META,^
+   
+     |Diana Valencia| diana@example.com| Crecimiento USA AAPL,GOOGL,^ MSFT, AMZN^ NVDA,|
+     |Antonio Ruiz| antonio@example.com| Defensive Global JNJ, PG, KO, PEP, V|
+     |Jose Pardo| jose@example.com| Tech Balanced AAPL,QQQ AMD,^ MSFT,^ META,^|
 
 **11. Fases de desarrollo**
 
