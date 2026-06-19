@@ -1,53 +1,53 @@
 # **Dashboard_Financiero**
 
-Dashboard_Financiero es una aplicación web financiera desarrollada en Python cuyo objetivo es gestionar y analizar portfolios de inversión de múltiples usuarios.
+    Dashboard_Financiero es una aplicación web financiera desarrollada en Python cuyo objetivo es gestionar y analizar portfolios de inversión de múltiples usuarios.
+    
+    El proyecto permite demostrar el uso de una base de datos, visualización de datos financieros, cálculo de pesos de cartera, generación de recomendaciones de rebalanceo mediante el método Hierarchical Risk Parity (HRP), creación de informes PDF y automatización del envío trimestral de informes mediante una API.
+    
+    La aplicación está pensada como un proyecto académico, por lo que los datos utilizados pueden ser ficticios o simulados. Las recomendaciones generadas no constituyen asesoramiento financiero real.
 
-El proyecto permite demostrar el uso de una base de datos, visualización de datos financieros, cálculo de pesos de cartera, generación de recomendaciones de rebalanceo mediante el método Hierarchical Risk Parity (HRP), creación de informes PDF y automatización del envío trimestral de informes mediante una API.
+**¿Qué va a hacer la aplicación?**
 
-La aplicación está pensada como un proyecto académico, por lo que los datos utilizados pueden ser ficticios o simulados. Las recomendaciones generadas no constituyen asesoramiento financiero real.
-
-¿Qué va a hacer la aplicación?
-
-La aplicación permitirá seleccionar distintos usuarios, cada uno con su propio portfolio de inversión guardado en base de datos. Al elegir un usuario, el dashboard mostrará la información correspondiente a su cartera.
-
-Las funcionalidades principales serán:
-
-Gestión de varios usuarios.
-Portfolio independiente para cada usuario.
-Almacenamiento de datos en SQLite.
-Visualización del valor total de la cartera.
-Cálculo del peso actual de cada activo.
-Gráficos de composición del portfolio.
-Evolución histórica ficticia de varios años.
-Advisor financiero basado en HRP.
-Tabla de rebalanceo con acciones recomendadas.
-Generación de informes financieros en PDF.
-API preparada para automatización externa con Zapier o Make.
-Arquitectura general
-flowchart TD
-    A[Usuario] --> B[Dashboard Streamlit]
-    B --> C[(Base de datos SQLite)]
-    B --> D[Módulo Portfolio]
-    B --> E[Módulo Advisor HRP]
-    B --> F[Módulo Evolución Histórica]
-    B --> G[Generador PDF]
-
-    E --> H[Datos históricos o simulados]
-    E --> I[Cálculo de pesos HRP]
-    I --> J[Tabla de rebalanceo]
-
-    K[Zapier / Make] --> L[API FastAPI]
-    L --> C
-    L --> G
-Flujo principal
-flowchart LR
-    A[Seleccionar usuario] --> B[Consultar portfolio]
-    B --> C[Calcular valor y pesos actuales]
-    C --> D[Mostrar dashboard]
-    D --> E[Ejecutar Advisor HRP]
-    E --> F[Generar recomendación]
-    F --> G[Crear informe PDF]
-Base de datos
+    La aplicación permitirá seleccionar distintos usuarios, cada uno con su propio portfolio de inversión guardado en base de datos. Al elegir un usuario, el dashboard mostrará la información correspondiente a su cartera.
+    
+    Las funcionalidades principales serán:
+    
+    Gestión de varios usuarios.
+    Portfolio independiente para cada usuario.
+    Almacenamiento de datos en SQLite.
+    Visualización del valor total de la cartera.
+    Cálculo del peso actual de cada activo.
+    Gráficos de composición del portfolio.
+    Evolución histórica ficticia de varios años.
+    Advisor financiero basado en HRP.
+    Tabla de rebalanceo con acciones recomendadas.
+    Generación de informes financieros en PDF.
+    API preparada para automatización externa con Zapier o Make.
+    Arquitectura general
+    flowchart TD
+            A[Usuario] --> B[Dashboard Streamlit]
+            B --> C[(Base de datos SQLite)]
+            B --> D[Módulo Portfolio]
+            B --> E[Módulo Advisor HRP]
+            B --> F[Módulo Evolución Histórica]
+            B --> G[Generador PDF]
+        
+            E --> H[Datos históricos o simulados]
+            E --> I[Cálculo de pesos HRP]
+            I --> J[Tabla de rebalanceo]
+        
+            K[Zapier / Make] --> L[API FastAPI]
+            L --> C
+            L --> G
+        Flujo principal
+        flowchart LR
+            A[Seleccionar usuario] --> B[Consultar portfolio]
+            B --> C[Calcular valor y pesos actuales]
+            C --> D[Mostrar dashboard]
+            D --> E[Ejecutar Advisor HRP]
+            E --> F[Generar recomendación]
+            F --> G[Crear informe PDF]
+    Base de datos
 
 La base de datos se organizará en cuatro tablas principales:
 
