@@ -403,6 +403,7 @@ Parity (HRP)
     README Incluye instalación, uso y explicación del proyecto.
     Memoria Explicaconclusiones.^ arquitectura, base^ de^ datos,^ HRP,^ resultados^ y^
     Cierre
-    Este plan puede utilizarse como guía de desarrollo y como base para redactar la memoria final del proyecto. La
+    
+  Este plan puede utilizarse como guía de desarrollo y como base para redactar la memoria final del proyecto. La
   prioridad será conseguir una aplicación funcional, visualmente clara y alineada con los requisitos: multiusuario,
   portafolio por usuario, asesor HRP, informes trimestrales y evolución histórica ficticia.
