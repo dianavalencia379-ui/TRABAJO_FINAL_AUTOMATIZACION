@@ -32,6 +32,7 @@ Parity (HRP)
     14- Checklist final de entrega
 
 **1. Objetivo general del proyecto**
+
  El objetivo del proyecto es desarrollar una aplicación web denominada Dashboard_Financiero, orientada a
  la gestión y análisis de carteras de inversión de múltiples usuarios. La aplicación permitirá que cada usuario
  tenga asociado un portafolio propio, almacenado en una base de datos, de forma que pueda demostrar el
@@ -50,6 +51,7 @@ Parity (HRP)
  optimización de carteras.
 
 **2. Alcance funcional**
+
  El sistema incluye las siguientes funcionalidades principales:
   ● Gestión de múltiples usuarios desde una base de datos.
   ● Asociación de cada usuario con un portafolio propio.
@@ -65,6 +67,7 @@ Parity (HRP)
   ● Inclusión de datos ficticios precargados para facilitar la demostración del sistema.
  
 **3. Tecnologías previstas**
+
  Tecnología Uso dentro del proyecto
  Python Lenguaje principal del proyecto.
  Streamlit Construcción de la interfaz web del dashboard.
@@ -81,6 +84,7 @@ Parity (HRP)
  La aplicación se organizará en una estructura modular, separando la interfaz, la lógica financiera, el acceso
  a datos, la generación de informes, la API y las pruebas. Esta división permite que el proyecto sea más
  claro, mantenible y fácil de explicar en la memoria.
+
 
   Dashboard_Financiero/
   |
@@ -118,6 +122,7 @@ Parity (HRP)
   |-- test_portfolio_engine.py
   |-- test_rebalance_engine.py
   Carpeta / archivo Responsabilidad
+  
   app.py Punto de entrada de la aplicación Streamlit.
   api.py APIexternas.^ para^ generación de^ informes^ desde^ herramientas^
   data_layer Conexión con base de datos y fuentes de datos financieros.
@@ -128,6 +133,7 @@ Parity (HRP)
   tests Pruebas unitarias del proyecto.
 
 **5. Diseño de la base de datos**
+
  La base de datos tendrá como finalidad demostrar que la aplicación funciona con distintos usuarios y que
  cada uno dispone de una cartera propia. Para ello se utilizarán cuatro tablas principales: usuarios, carteras,
  posiciones y portafolio_history.
@@ -138,6 +144,7 @@ Parity (HRP)
  portfolio_history id, portfolio_id, date, total_value Simularcartera.^ la^ evolución^ histórica^ de^ cada^
 
 *5.1. Relación entre tablas*
+
  ● Un usuario puede tener uno o varios portafolios.
  ● Cada portafolio pertenece a un único usuario.
  ● Cada cartera puede contener múltiples posiciones financieras.
@@ -145,6 +152,7 @@ Parity (HRP)
  ● El tablero consultará la base de datos en función del usuario seleccionado.
 
 **6. Diseño de la interfaz de usuario**
+
  La aplicación tendrá una interfaz principal en Streamlit con un selector lateral de usuario. Al seleccionar un
  usuario, todas las pestañas se actualizarán con la información correspondiente a su portafolio.
  Pestaña Contenido previsto
@@ -155,11 +163,13 @@ Parity (HRP)
  Informes Generacióno Make. de^ PDF^ y^ explicación^ de^ integración^ con^ Zapier^
 
 **7. Módulo Asesor HRP**
+
  La pestaña Advisor HRP será el apartado más importante desde el punto de vista financiero. Su función
  será analizar la cartera actual del usuario y proponer una distribución alternativa utilizando el método
  Hierarchical Risk Parity.
 
 *7.1. Proceso de cálculo*
+
  Obtener los tickers del portafolio seleccionado.
  Descargar precios históricos de los activos o utilizar datos simulados si la descarga falla.
  Calcular rentabilidades diarias o semanales.
@@ -184,6 +194,7 @@ Parity (HRP)
  asesoramiento financiero profesional ni una recomendación real de inversión.
 
 **8. Evolución histórica del portafolio**
+
  La pestaña de evolución mostrará cómo habría evolucionado el portafolio del usuario durante los últimos
  años. Como no se dispone de histórico real de uso, se precargará una serie de datos ficticios en la base de
  datos. Estos datos simularán la evolución del valor total del portafolio.
@@ -197,7 +208,9 @@ Parity (HRP)
  plataforma financiera que lleva varios años monitorizando la cartera del usuario.
 
 **9. Informes PDF y automatización trimestral**
+
  *9.1. Informe PDF*
+ 
  El informe financiero incluye los siguientes apartados:
   ● Datos del usuario.
   ● Nombre del portafolio.
@@ -211,6 +224,7 @@ Parity (HRP)
   ● Aviso de uso académico.
 
 *9.2. API para automatización externa*
+
  Se desarrollará una API mediante FastAPI para permitir que una herramienta externa solicite la generación
  del informe de un usuario. El punto final previsto será:
  POST /api/report/{user_id}
@@ -223,6 +237,7 @@ Parity (HRP)
  generado.
 
 *9.3. Flujo con Zapier o Make*
+
  Elemento Configuración prevista
  Trigger Schedule
  Frecuencia Cada 3 meses
@@ -233,6 +248,7 @@ Parity (HRP)
  Adjunto Informe PDF generado automáticamente
 
 **10. Datos ficticios de demostración**
+
  Para que la aplicación pueda demostrarse sin dependencia de usuarios reales, se precargarán tres usuarios
  ficticios. Cada uno tendrá un portafolio y una evolución histórica distinta.
  Usuario Email Portfolio Activos
@@ -330,6 +346,7 @@ Parity (HRP)
  Entregable: Documentación completa y memoria preparada para entrega.
 
 **12. Prioridades, riesgos y soluciones**
+
  *12.1. Reparto de prioridades*
  Nivel de prioridad Elementos incluidos
  Alta
@@ -345,6 +362,7 @@ Parity (HRP)
  Informes PDF demasiado complejos Crearresumen^ un^ informetextual.^ sencillo^ pero^ completo,^ priorizando^ tablas^ y^
 
 **13. Resultado final esperado**
+
  Al finalizar el desarrollo, se dispondrá de una aplicación web funcional llamada Dashboard_Financiero,
  capaz de gestionar varios usuarios y carteras desde una base de datos. La aplicación permitirá visualizar la
  composición actual de cada cartera, consultar su evolución histórica ficticia, generar recomendaciones de
@@ -361,6 +379,7 @@ Parity (HRP)
   ● Integración con herramientas externas.
 
 **14. Lista de verificación final de entrega**
+
  Elemento Estado esperado
  Aplicación Streamlit Arranca correctamente y permite seleccionar usuario.
  Base de datos SQLite Contiene usuarios, portfolios, posiciones e histórico.
