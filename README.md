@@ -87,41 +87,77 @@ Parity (HRP)
 
 
   Dashboard_Financiero/
+  
   |
+  
   |-- app.py
+  
   |-- api.py
+  
   |-- config.py
+  
   |-- requirements.txt
+  
   |
+  
   |-- data_layer/
+  
   | |-- db.py
+  
   | |-- yahoo_client.py
+  
   | |-- seed_data.py
+  
   |
+  
   |-- domain/
+  
   | |-- portfolio_engine.py
+  
   | |-- hrp_engine.py
+  
   | |-- rebalance_engine.py
+  
   | |-- evolution_engine.py
+  
   |
+  
   |-- ui/
+  
   | |-- tab_overview.py
+  
   | |-- tab_portfolio.py
+  
   | |-- tab_advisor.py
+  
   | |-- tab_evolution.py
+  
   | |-- tab_reports.py
+  
   |
+  
   |-- reports/
+  
   | |-- pdf_generator.py
+  
   |
+  
   |-- scripts/
+  
   | |-- init_db.py
+  
   |
+  
   |-- tests/
+  
   |-- test_hrp_engine.py
+  
   |-- test_portfolio_engine.py
+  
   |-- test_rebalance_engine.py
+  
   Carpeta / archivo Responsabilidad
+  
   
   app.py Punto de entrada de la aplicación Streamlit.
   api.py APIexternas.^ para^ generación de^ informes^ desde^ herramientas^
