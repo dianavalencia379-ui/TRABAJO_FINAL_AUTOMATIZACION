@@ -15,20 +15,20 @@ Rebalanceo de cartera mediante Hierarchical Risk
 Parity (HRP)
 
  **Índice de contenidos**
- 1- Objetivo general del proyecto
- 2- Alcance funcional
- 3- Tecnologías previstas
- 4- Arquitectura y estructura del proyecto.
- 5- Diseño de la base de datos
- 6- Diseño de la interfaz de usuario
- 7- Módulo Asesor HRP
- 8- Evolución histórica del portafolio
- 9- Informes PDF y automatización trimestral
- 10- Datos ficticios de demostración.
- 11- Fases de desarrollo
- 12- Prioridades, riesgos y soluciones
- 13- Resultado final esperado
- 14- Checklist final de entrega
+  1- Objetivo general del proyecto
+  2- Alcance funcional
+  3- Tecnologías previstas
+  4- Arquitectura y estructura del proyecto.
+  5- Diseño de la base de datos
+  6- Diseño de la interfaz de usuario
+  7- Módulo Asesor HRP
+  8- Evolución histórica del portafolio
+  9- Informes PDF y automatización trimestral
+  10- Datos ficticios de demostración.
+  11- Fases de desarrollo
+  12- Prioridades, riesgos y soluciones
+  13- Resultado final esperado
+  14- Checklist final de entrega
 
 **1. Objetivo general del proyecto**
  El objetivo del proyecto es desarrollar una aplicación web denominada Dashboard_Financiero, orientada a
