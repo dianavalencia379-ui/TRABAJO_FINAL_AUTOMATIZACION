@@ -69,68 +69,68 @@ Parity (HRP)
  
 **3. Tecnologías previstas**
 
- Tecnología Uso dentro del proyecto
- Python Lenguaje principal del proyecto.
- Streamlit Construcción de la interfaz web del dashboard.
- SQLite Basehistórico.^ de^ datos local^ para^ usuarios,^ portfolios,^ posiciones^ e^
- Pandas Tratamiento y transformación de datos financieros.
- NumPy Cálculos numéricos y generación de datos ficticios.
- SciPy Clustering jerárquico necesario para el método HRP.
- yfinance Obtención de precios históricos de activos financieros.
- Plotly Gráficos interactivos de cartera y evolución.
- ReportLab Generación de informes PDF.
- FastAPI Creación de endpoints para integraciones externas.
- Pytest Pruebas de funciones principales.
- 4. Arquitectura y estructura del proyecto
- La aplicación se organizará en una estructura modular, separando la interfaz, la lógica financiera, el acceso
- a datos, la generación de informes, la API y las pruebas. Esta división permite que el proyecto sea más
- claro, mantenible y fácil de explicar en la memoria.
+  Tecnología Uso dentro del proyecto
+  Python Lenguaje principal del proyecto.
+  Streamlit Construcción de la interfaz web del dashboard.
+  SQLite Basehistórico.^ de^ datos local^ para^ usuarios,^ portfolios,^ posiciones^ e^
+  Pandas Tratamiento y transformación de datos financieros.
+  NumPy Cálculos numéricos y generación de datos ficticios.
+  SciPy Clustering jerárquico necesario para el método HRP.
+  yfinance Obtención de precios históricos de activos financieros.
+  Plotly Gráficos interactivos de cartera y evolución.
+  ReportLab Generación de informes PDF.
+  FastAPI Creación de endpoints para integraciones externas.
+  Pytest Pruebas de funciones principales.
+  4. Arquitectura y estructura del proyecto
+  La aplicación se organizará en una estructura modular, separando la interfaz, la lógica financiera, el acceso
+  a datos, la generación de informes, la API y las pruebas. Esta división permite que el proyecto sea más
+  claro, mantenible y fácil de explicar en la memoria.
 
 
- Dashboard_Financiero/
-|
-|-- app.py
-|-- api.py
-|-- config.py
-|-- requirements.txt
-|
-|-- data_layer/
-| |-- db.py
-| |-- yahoo_client.py
-| |-- seed_data.py
-|
-|-- domain/
-| |-- portfolio_engine.py
-| |-- hrp_engine.py
-| |-- rebalance_engine.py
-| |-- evolution_engine.py
-|
-|-- ui/
-| |-- tab_overview.py
-| |-- tab_portfolio.py
-| |-- tab_advisor.py
-| |-- tab_evolution.py
-| |-- tab_reports.py
-|
-|-- reports/
-| |-- pdf_generator.py
-|
-|-- scripts/
-| |-- init_db.py
-|
-|-- tests/
-|-- test_hrp_engine.py
-|-- test_portfolio_engine.py
-|-- test_rebalance_engine.py
-Carpeta / archivo Responsabilidad
-app.py Punto de entrada de la aplicación Streamlit.
-api.py APIexternas.^ para^ generación de^ informes^ desde^ herramientas^
-data_layer Conexión con base de datos y fuentes de datos financieros.
-domain Lógica de negocio: portfolio, HRP, rebalanceo y evolución.
-ui Pestañas visuales del dashboard.
-reports Generación de informes PDF.
-scripts Inicialización y carga de datos ficticios.
-tests Pruebas unitarias del proyecto.
+                                                Dashboard_Financiero/
+                                               |
+                                               |-- app.py
+                                               |-- api.py
+                                               |-- config.py
+                                               |-- requirements.txt
+                                               |
+                                               |-- data_layer/
+                                               | |-- db.py
+                                               | |-- yahoo_client.py
+                                               | |-- seed_data.py
+                                               |
+                                               |-- domain/
+                                               | |-- portfolio_engine.py
+                                               | |-- hrp_engine.py
+                                               | |-- rebalance_engine.py
+                                               | |-- evolution_engine.py
+                                               |
+                                               |-- ui/
+                                               | |-- tab_overview.py
+                                               | |-- tab_portfolio.py
+                                               | |-- tab_advisor.py
+                                               | |-- tab_evolution.py
+                                               | |-- tab_reports.py
+                                               |
+                                               |-- reports/
+                                               | |-- pdf_generator.py
+                                               |
+                                               |-- scripts/
+                                               | |-- init_db.py
+                                               |
+                                               |-- tests/
+                                               |-- test_hrp_engine.py
+                                               |-- test_portfolio_engine.py
+                                               |-- test_rebalance_engine.py
+                                               Carpeta / archivo Responsabilidad
+                                               app.py Punto de entrada de la aplicación Streamlit.
+                                               api.py APIexternas.^ para^ generación de^ informes^ desde^ herramientas^
+                                               data_layer Conexión con base de datos y fuentes de datos financieros.
+                                               domain Lógica de negocio: portfolio, HRP, rebalanceo y evolución.
+                                               ui Pestañas visuales del dashboard.
+                                               reports Generación de informes PDF.
+                                               scripts Inicialización y carga de datos ficticios.
+                                               tests Pruebas unitarias del proyecto.
 
 
 **5. Diseño de la base de datos**
