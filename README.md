@@ -391,18 +391,18 @@ Parity (HRP)
 
 **14. Lista de verificación final de entrega**
 
- |Elemento | Estado esperado |
- |Aplicación Streamlit | Arranca correctamente y permite seleccionar usuario.|
- |Base de datos SQLite |Contiene usuarios, portfolios, posiciones e histórico.|
- |Portfolio por usuario | Cada usuario muestra una cartera distinta.|
- |Advisor HRP | Genera pesos recomendados y tabla de rebalanceo.|
- |Evolución histórica | Muestra datos ficticios de varios años.|
- |Informe PDF | Se puede generar y descargar.|
- |API |Permite solicitar informe por user_id.|
- |Zapier/Make Flujo trimestral explicado y documentado.|
- |README | Incluye instalación, uso y explicación del proyecto.|
- |Memoria |Explicaconclusiones.^ arquitectura, base^ de^ datos,^ HRP,^ resultados^ y^ |
- |Cierre|
+  |Elemento | Estado esperado |
+  |Aplicación Streamlit | Arranca correctamente y permite seleccionar usuario.|
+  |Base de datos SQLite |Contiene usuarios, portfolios, posiciones e histórico.|
+  |Portfolio por usuario | Cada usuario muestra una cartera distinta.|
+  |Advisor HRP | Genera pesos recomendados y tabla de rebalanceo.|
+  |Evolución histórica | Muestra datos ficticios de varios años.|
+  |Informe PDF | Se puede generar y descargar.|
+  |API |Permite solicitar informe por user_id.|
+  |Zapier/Make Flujo trimestral explicado y documentado.|
+  |README | Incluye instalación, uso y explicación del proyecto.|
+  |Memoria |Explicaconclusiones.^ arquitectura, base^ de^ datos,^ HRP,^ resultados^ y^ |
+  |Cierre|
     
   Este plan puede utilizarse como guía de desarrollo y como base para redactar la memoria final del proyecto. La
   prioridad será conseguir una aplicación funcional, visualmente clara y alineada con los requisitos: multiusuario,
