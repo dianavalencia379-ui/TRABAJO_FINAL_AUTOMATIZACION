@@ -15,6 +15,7 @@ Rebalanceo de cartera mediante Hierarchical Risk
 Parity (HRP)
 
  **Índice de contenidos**
+ 
     1- Objetivo general del proyecto
     2- Alcance funcional
     3- Tecnologías previstas
