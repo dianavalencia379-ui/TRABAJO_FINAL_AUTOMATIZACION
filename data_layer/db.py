@@ -69,6 +69,11 @@ def ensure_database_directory() -> Path:
     return settings.data_dir
 
 
+def ensure_generated_reports_directory() -> Path:
+    settings.generated_reports_dir.mkdir(parents=True, exist_ok=True)
+    return settings.generated_reports_dir
+
+
 def get_connection(database_path: Path | None = None) -> sqlite3.Connection:
     ensure_database_directory()
     connection = sqlite3.connect(database_path or get_database_path())
@@ -222,6 +227,27 @@ def get_users(connection: sqlite3.Connection) -> list[sqlite3.Row]:
         ORDER BY u.name, u.id
         """
     ).fetchall()
+
+
+def get_user_by_id(connection: sqlite3.Connection, user_id: int) -> sqlite3.Row | None:
+    return connection.execute(
+        """
+        SELECT
+            u.id AS user_id,
+            u.name AS user_name,
+            u.email AS user_email,
+            u.created_at AS created_at,
+            COUNT(DISTINCT p.id) AS portfolio_count,
+            COUNT(DISTINCT pos.id) AS position_count,
+            ROUND(COALESCE(SUM(pos.quantity * pos.avg_price), 0), 2) AS invested_amount
+        FROM users u
+        LEFT JOIN portfolios p ON p.user_id = u.id
+        LEFT JOIN positions pos ON pos.portfolio_id = p.id
+        WHERE u.id = ?
+        GROUP BY u.id, u.name, u.email, u.created_at
+        """,
+        (user_id,),
+    ).fetchone()
 
 
 def get_user_portfolios(

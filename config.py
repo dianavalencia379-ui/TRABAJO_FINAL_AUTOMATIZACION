@@ -11,6 +11,7 @@ class Settings:
     database_name: str = "dashboard_financiero.db"
     data_dirname: str = "data"
     reports_dirname: str = "reports"
+    generated_reports_dirname: str = "generated_reports"
 
     @property
     def base_dir(self) -> Path:
@@ -27,6 +28,10 @@ class Settings:
     @property
     def reports_dir(self) -> Path:
         return self.base_dir / self.reports_dirname
+
+    @property
+    def generated_reports_dir(self) -> Path:
+        return self.data_dir / self.generated_reports_dirname
 
 
 settings = Settings()

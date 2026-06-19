@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import BytesIO
 import importlib
+from pathlib import Path
 import re
 from typing import Any
 
@@ -400,6 +401,13 @@ def build_report_filename(selected_user: dict[str, Any]) -> str:
     slug = re.sub(r"[^a-z0-9]+", "_", raw_email).strip("_") or "usuario"
     stamp = datetime.now(UTC).strftime("%Y%m%d")
     return f"informe_{slug}_{stamp}.pdf"
+
+
+def persist_generated_report(report: GeneratedPdfReport, *, output_dir: Path) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    file_path = output_dir / report.file_name
+    file_path.write_bytes(report.content)
+    return file_path
 
 
 def _build_final_comment(
