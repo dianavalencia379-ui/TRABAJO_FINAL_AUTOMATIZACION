@@ -215,6 +215,7 @@ Parity (HRP)
 **9. Informes PDF y automatización trimestral**
 
   *9.1. Informe PDF*
+  
      El informe financiero incluye los siguientes apartados:
       ● Datos del usuario.
       ● Nombre del portafolio.
@@ -228,6 +229,7 @@ Parity (HRP)
       ● Aviso de uso académico.
 
   *9.2. API para automatización externa*
+  
      Se desarrollará una API mediante FastAPI para permitir que una herramienta externa solicite la generación
      del informe de un usuario. El punto final previsto será:
      POST /api/report/{user_id}
@@ -240,6 +242,7 @@ Parity (HRP)
      generado.
 
   *9.3. Flujo con Zapier o Make*
+  
      Elemento Configuración prevista
      Trigger Schedule
      Frecuencia Cada 3 meses
