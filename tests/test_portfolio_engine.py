@@ -32,8 +32,10 @@ def test_build_portfolio_snapshot_aggregates_seeded_data() -> None:
     assert snapshot["positions_table"][0]["ticker"] == "NVDA"
     assert snapshot["positions_table"][0]["current_value"] == 15161.4
     assert round(sum(item["weight_pct"] for item in snapshot["positions_table"]), 4) == 100.0
+    assert round(sum(item["weight_pct"] for item in snapshot["portfolio_breakdown"]), 4) == 100.0
     assert snapshot["composition"]["by_asset"][0]["ticker"] == "NVDA"
     assert snapshot["composition"]["by_portfolio"][0]["portfolio_name"] == "Growth USA"
+    assert all(0.0 <= item["weight_pct"] <= 100.0 for item in snapshot["positions_table"])
 
 
 def test_build_portfolio_snapshot_filters_single_user() -> None:

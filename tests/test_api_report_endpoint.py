@@ -2,10 +2,24 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+import pytest
+
+try:
+    from fastapi.testclient import TestClient
+except (ModuleNotFoundError, RuntimeError) as exc:  # pragma: no cover - depende del entorno
+    TestClient = None
+    TESTCLIENT_IMPORT_ERROR = str(exc)
+else:
+    TESTCLIENT_IMPORT_ERROR = None
 
 import api
 from reports.pdf_generator import GeneratedPdfReport
+
+
+pytestmark = pytest.mark.skipif(
+    TestClient is None,
+    reason=TESTCLIENT_IMPORT_ERROR or "fastapi.testclient no está disponible en este entorno.",
+)
 
 
 def test_generate_report_endpoint_returns_pdf_reference(tmp_path: Path, monkeypatch) -> None:
@@ -58,3 +72,22 @@ def test_generate_report_endpoint_handles_missing_reportlab(monkeypatch) -> None
     payload = response.json()
     assert payload["code"] == "pdf_generation_unavailable"
     assert payload["pdf"]["available"] is False
+
+
+def test_generate_report_endpoint_generates_real_pdf_when_available(tmp_path: Path, monkeypatch) -> None:
+    available, message = api.is_pdf_generation_available()
+    if not available:
+        pytest.skip(message or "La generación PDF no está disponible en este entorno.")
+
+    monkeypatch.setattr(api, "ensure_generated_reports_directory", lambda: tmp_path)
+    client = TestClient(api.app)
+
+    response = client.post("/api/report/1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "generated"
+    assert payload["pdf"]["file_name"].endswith(".pdf")
+    assert payload["pdf"]["size_bytes"] > 0
+    assert payload["sections"]
+    assert Path(payload["pdf"]["absolute_path"]).exists()

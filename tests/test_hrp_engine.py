@@ -41,6 +41,7 @@ def test_calculate_hrp_weights_sums_to_one() -> None:
 
     assert len(result["recommended_weights"]) == 5
     assert round(sum(result["recommended_weights"].values()), 6) == 1.0
+    assert all(0.0 < weight < 1.0 for weight in result["recommended_weights"].values())
     assert len(result["cluster_order"]) == 5
     assert set(result["cluster_order"]) == {"AAPL", "MSFT", "NVDA", "GOOGL", "AMZN"}
 
@@ -60,6 +61,8 @@ def test_build_hrp_portfolio_snapshot_returns_interpretable_weights() -> None:
     assert snapshot["diagnostics"]["used_fallback"] is True
     assert round(sum(snapshot["current_weights"].values()), 6) == 1.0
     assert round(sum(snapshot["recommended_weights"].values()), 6) == 1.0
+    assert snapshot["diagnostics"]["weights_sum"]["current"] == 1.0
+    assert snapshot["diagnostics"]["weights_sum"]["recommended"] == 1.0
     assert len(snapshot["weights_table"]) == 5
     assert snapshot["weights_table"][0]["ticker"] in snapshot["tickers"]
     assert set(snapshot["matrices"]["correlation"].keys()) == set(snapshot["tickers"])
