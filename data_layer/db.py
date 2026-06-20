@@ -14,8 +14,8 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     """
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL CHECK(length(trim(name)) > 0),
-        email TEXT NOT NULL UNIQUE CHECK(length(trim(email)) > 0),
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
         created_at TEXT NOT NULL
     )
     """,
@@ -23,7 +23,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     CREATE TABLE IF NOT EXISTS portfolios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
-        name TEXT NOT NULL CHECK(length(trim(name)) > 0),
+        name TEXT NOT NULL,
         created_at TEXT NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
@@ -32,10 +32,10 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     CREATE TABLE IF NOT EXISTS positions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         portfolio_id INTEGER NOT NULL,
-        ticker TEXT NOT NULL CHECK(length(trim(ticker)) > 0),
-        asset_name TEXT NOT NULL CHECK(length(trim(asset_name)) > 0),
-        quantity REAL NOT NULL CHECK(quantity >= 0),
-        avg_price REAL NOT NULL CHECK(avg_price >= 0),
+        ticker TEXT NOT NULL,
+        asset_name TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        avg_price REAL NOT NULL,
         FOREIGN KEY (portfolio_id) REFERENCES portfolios (id) ON DELETE CASCADE,
         UNIQUE (portfolio_id, ticker)
     )
@@ -44,8 +44,8 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     CREATE TABLE IF NOT EXISTS portfolio_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         portfolio_id INTEGER NOT NULL,
-        date TEXT NOT NULL CHECK(date(date) IS NOT NULL),
-        total_value REAL NOT NULL CHECK(total_value >= 0),
+        date TEXT NOT NULL,
+        total_value REAL NOT NULL,
         FOREIGN KEY (portfolio_id) REFERENCES portfolios (id) ON DELETE CASCADE,
         UNIQUE (portfolio_id, date)
     )
