@@ -31,7 +31,7 @@ El proyecto utiliza **`uv`** como gestor rápido de paquetes y entornos virtuale
 ---
 
 ## Paso 3: Configuración del Archivo de Entorno (`.env`)
-El proyecto requiere variables de entorno mínimas para su ejecución y para simular llamadas HRP:
+El proyecto requiere variables de entorno mínimas para su ejecución y cargar credenciales locales de API:
 
 1. Copia el archivo de ejemplo `.env.example` y nómbralo `.env`:
    ```bash
