@@ -4,15 +4,11 @@
 
 Aplicación web multiusuario para gestión de carteras, asesor HRP, evolución histórica e
 informes automatizados trimestrales
-Proyecto Dashboard_Financiero
-Tipo de trabajo
-Aplicación web financiera con base de datos y
-automatización
-Tecnologías principales Python,^ Streamlit,^ SQLite,^ FastAPI,^ Pandas,^ SciPy,^
-Plotly, ReportLab
-Funcionalidad clave
-Rebalanceo de cartera mediante Hierarchical Risk
-Parity (HRP)
+|Proyecto |Dashboard_Financiero|
+|---------|--------------------|
+|Tipo de trabajo| Aplicación web financiera con base de datos y automatización|
+|Tecnologías principales |Python,^ Streamlit,^ SQLite,^ FastAPI,^ Pandas,^ SciPy,^Plotly, ReportLab|
+|Funcionalidad clave |Rebalanceo de cartera mediante Hierarchical Risk Parity (HRP)|
 
  **Índice de contenidos**
  
