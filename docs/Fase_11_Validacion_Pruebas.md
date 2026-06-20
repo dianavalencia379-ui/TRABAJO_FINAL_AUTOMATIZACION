@@ -32,8 +32,9 @@ python scripts/run_main_test_battery.py
 ## Hallazgos del entorno revisado
 
 - `.venv` contiene `pytest-9.1.1`, `fastapi-0.137.2`, `reportlab-5.0.0`, `scipy-1.18.0` y `yfinance-1.4.1`.
-- En la inspección del `site-packages` no aparece `httpx`, así que la ejecución real de tests API depende de instalarlo primero.
-- Hay drift entre algunos pins declarados y el entorno (`pytest<9.0`, `reportlab<5.0`, `yfinance<1.0`).
+- En la inspección del `site-packages` no aparece `httpx`, así que la ejecución real de tests API sigue dependiendo de reinstalar dependencias desde `requirements.txt`.
+- El manifiesto de dependencias fue saneado para alinearlo con la `.venv` actual (`pytest 9.x`, `reportlab 5.x`, `yfinance 1.x`, `pandas 3.x`) y dejar `httpx` explícito para `starlette.testclient`.
+- La estrategia de `.env` quedó alineada con `config.py`: se acepta `GEMINI_API_KEY` como fallback local y `.env.example` documenta la variable de mapeo `API_KEY_ENV_VAR`.
 
 ## Notas
 

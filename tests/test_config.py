@@ -36,6 +36,20 @@ def test_build_settings_prefers_os_environment_over_dotenv(tmp_path: Path) -> No
     assert settings.require_api_key() == "environment-value"
 
 
+def test_build_settings_reads_gemini_api_key_without_explicit_mapping(tmp_path: Path) -> None:
+    """Permite reutilizar un .env local con GEMINI_API_KEY sin configuración extra."""
+    (tmp_path / ".env").write_text(
+        "GEMINI_API_KEY=gemini-local-value\n",
+        encoding="utf-8",
+    )
+
+    settings = build_settings(base_dir=tmp_path, environ={})
+
+    assert settings.has_api_key is True
+    assert settings.require_api_key() == "gemini-local-value"
+    assert settings.api_key_env_name == "GEMINI_API_KEY"
+
+
 def test_settings_repr_does_not_expose_api_key(tmp_path: Path) -> None:
     """Asegura que la representación de Settings no exponga secretos."""
     (tmp_path / ".env").write_text(

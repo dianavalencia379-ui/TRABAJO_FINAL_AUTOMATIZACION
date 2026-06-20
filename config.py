@@ -141,6 +141,7 @@ def build_settings(
         (
             configured_api_key_name,
             "DASHBOARD_API_KEY",
+            "GEMINI_API_KEY",
             "API_KEY",
             "APP_API_KEY",
             "SERVICE_API_KEY",
