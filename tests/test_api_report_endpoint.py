@@ -83,6 +83,20 @@ def test_generate_report_endpoint_generates_real_pdf_when_available(tmp_path: Pa
     if not available:
         pytest.skip(message or "La generación PDF no está disponible en este entorno.")
 
+    # Redirigir el fetch de precios a la simulación para evitar llamadas a la red reales en los tests
+    import data_layer.yahoo_client
+    from data_layer.yahoo_client import PriceHistoryResult, generate_simulated_price_history
+
+    def mock_fetch_price_history(tickers, **kwargs):
+        prices = generate_simulated_price_history(tickers, lookback_days=kwargs.get("lookback_days", 252))
+        return PriceHistoryResult(
+            prices=prices,
+            source="simulated",
+            warnings=[],
+            metadata={"mocked": True},
+        )
+
+    monkeypatch.setattr(data_layer.yahoo_client, "fetch_price_history", mock_fetch_price_history)
     monkeypatch.setattr(api, "ensure_generated_reports_directory", lambda: tmp_path)
     client = TestClient(api.app)
 

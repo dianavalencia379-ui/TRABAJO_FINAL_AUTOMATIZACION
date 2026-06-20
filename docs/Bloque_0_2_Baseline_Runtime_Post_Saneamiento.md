@@ -6,7 +6,7 @@ Dejar registrado el estado observable del entorno tras el saneamiento y comparar
 
 ## Evidencia observable del entorno
 
-- `.venv/pyvenv.cfg` sigue apuntando a `Python 3.14.4`.
+- `.venv/pyvenv.cfg` sigue apuntando a `Python 3.12.13`.
 - `.venv/Scripts/` contiene `python.exe`, `streamlit.exe`, `uvicorn.exe`, `pytest.exe` y `fastapi.exe`.
 - `requirements.txt` mantiene declaradas las dependencias base del proyecto, incluyendo `httpx>=0.28,<1.0`.
 - `.venv/Lib/site-packages/` contiene, entre otras, `streamlit-1.58.0`, `fastapi-0.137.2`, `uvicorn-0.49.0`, `numpy-2.4.6`, `pandas-3.0.3`, `scipy-1.18.0`, `reportlab-5.0.0`, `pytest-9.1.1`, `pydantic-2.13.4` y `yfinance-1.4.1`.
@@ -17,7 +17,7 @@ Dejar registrado el estado observable del entorno tras el saneamiento y comparar
 
 ### Se mantiene
 
-- La virtualenv observada sigue siendo Python `3.14.4`.
+- La virtualenv observada sigue siendo Python `3.12.13`.
 - Se conserva la alineación documental de `requirements.txt` con las majors esperadas.
 - `config.py` y `.env.example` siguen preparados para usar `GEMINI_API_KEY` como caso local.
 - El bloqueo principal detectado en el baseline anterior sigue siendo el mismo: falta `httpx` en la virtualenv inspeccionada.

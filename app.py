@@ -137,11 +137,7 @@ def main() -> None:
         return
 
     st.sidebar.header("Parámetros")
-    prefer_live_data = st.sidebar.checkbox(
-        "Intentar precios en vivo",
-        value=False,
-        help="Si falla Yahoo Finance, el motor HRP usa automáticamente precios simulados.",
-    )
+    prefer_live_data = True
     rebalance_threshold = float(
         st.sidebar.slider(
             "Umbral de rebalanceo (%)",
@@ -152,11 +148,16 @@ def main() -> None:
         )
     )
 
-    dashboard_data = load_dashboard_data(
-        selected_user["user_email"],
-        rebalance_threshold=rebalance_threshold,
-        prefer_live_data=prefer_live_data,
-    )
+    try:
+        dashboard_data = load_dashboard_data(
+            selected_user["user_email"],
+            rebalance_threshold=rebalance_threshold,
+            prefer_live_data=prefer_live_data,
+        )
+    except Exception as exc:
+        st.error(f"Error al obtener datos reales de mercado (HRP): {exc}")
+        st.info("Por favor, comprueba tu conexión a internet o vuelve a intentarlo más tarde.")
+        return
 
     header_columns = st.columns((1.8, 1.2))
     with header_columns[0]:
