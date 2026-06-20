@@ -6,7 +6,7 @@ Dejar coherentes `requirements.txt`, `.venv` y la estrategia local de `.env` par
 
 ## Estado revisado
 
-- La `.venv` actual fue creada con `Python 3.14.4`.
+- La `.venv` actual fue creada con `Python 3.12.13`.
 - Había drift entre versiones instaladas y rangos declarados en `requirements.txt`.
 - `httpx` seguía siendo una dependencia necesaria para `fastapi.testclient`/`starlette.testclient`, pero no aparece en la inspección actual de `site-packages`.
 - El `.env` local existente usa una clave de proveedor (`GEMINI_API_KEY`), mientras que la configuración base priorizaba `DASHBOARD_API_KEY` salvo mapeo explícito.
