@@ -42,9 +42,10 @@ informes automatizados trimestrales
  pueda ser llamada desde herramientas externas como Zapier o Make para generar un informe trimestral y
  enviarlo automáticamente al correo electrónico del usuario.
  Enfoque del proyecto
- El objetivo no es crear una plataforma financiera lista real para producción, sino una aplicación académica completa
+ |--------------------------------------------------------------------------------------------------------------------|
+ |El objetivo no es crear una plataforma financiera lista real para producción, sino una aplicación académica completa
  que demuestre base de datos, automatización, análisis financiero, generación de informes y uso de un método de
- optimización de carteras.
+ optimización de carteras.|
 
 **2. Alcance funcional**
 
