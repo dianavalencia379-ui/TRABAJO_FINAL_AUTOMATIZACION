@@ -1,4 +1,4 @@
-# Trabajo Final de la Asignatura "Fintech y Automatización"
+# Trabajo Final de la Asignatura "Automatización de Procesos Financieros"
 
 ## Fechas de entrega:
 
