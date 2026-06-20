@@ -45,7 +45,7 @@ def test_generate_report_endpoint_returns_pdf_reference(tmp_path: Path, monkeypa
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "generated"
-    assert payload["user"]["email"] == "diana@example.com"
+    assert payload["user"]["email"] == "dianavalencia379@gmail.com"
     assert payload["portfolio"]["portfolio_count"] >= 1
     assert payload["pdf"]["file_name"].endswith(".pdf")
     assert payload["pdf"]["download_url"].startswith("/report-files/")

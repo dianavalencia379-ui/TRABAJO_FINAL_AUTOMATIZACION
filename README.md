@@ -256,7 +256,7 @@ informes automatizados trimestrales
 
    |Usuario        | Email               | Portfolio     | Activos                            |
    |---------------|---------------------|---------------|------------------------------------|
-   | Diana Valencia| diana@example.com   | Crecimiento   | USA AAPL,GOOGL,^ MSFT, AMZN^ NVDA, |
+   | Diana Valencia| dianavalencia379@gmail.com   | Crecimiento   | USA AAPL,GOOGL,^ MSFT, AMZN^ NVDA, |
    | Antonio Ruiz  | antonio@example.com | Defensive     | Global JNJ, PG, KO, PEP, V         |
    |Jose Pardo    | jose@example.com    | Tech Balanced | AAPL,QQQ AMD,^ MSFT,^ META,^       |
 

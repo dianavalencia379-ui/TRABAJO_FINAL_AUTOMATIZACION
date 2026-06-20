@@ -64,9 +64,9 @@ def test_build_report_payload_contains_required_sections() -> None:
     connection = _build_seeded_connection()
     selected_user = {
         "user_name": "Diana Valencia",
-        "user_email": "diana@example.com",
+        "user_email": "dianavalencia379@gmail.com",
     }
-    dashboard_data = _build_dashboard_data(connection, user_email="diana@example.com")
+    dashboard_data = _build_dashboard_data(connection, user_email="dianavalencia379@gmail.com")
 
     payload = build_report_payload(
         selected_user=selected_user,
@@ -74,7 +74,7 @@ def test_build_report_payload_contains_required_sections() -> None:
     )
 
     assert payload["file_name"].endswith(".pdf")
-    assert payload["user"]["email"] == "diana@example.com"
+    assert payload["user"]["email"] == "dianavalencia379@gmail.com"
     assert payload["summary"]["portfolio_summary"]["total_current_value"] > 0
     assert payload["tables"]["composition_rows"]
     assert payload["tables"]["evolution_rows"]
@@ -91,9 +91,9 @@ def test_generate_user_report_pdf_returns_pdf_or_clear_unavailable_message() -> 
     connection = _build_seeded_connection()
     selected_user = {
         "user_name": "Diana Valencia",
-        "user_email": "diana@example.com",
+        "user_email": "dianavalencia379@gmail.com",
     }
-    dashboard_data = _build_dashboard_data(connection, user_email="diana@example.com")
+    dashboard_data = _build_dashboard_data(connection, user_email="dianavalencia379@gmail.com")
 
     available, message = is_pdf_generation_available()
     if not available:
@@ -116,9 +116,9 @@ def test_generate_user_report_pdf_can_be_persisted_to_disk(tmp_path) -> None:
     connection = _build_seeded_connection()
     selected_user = {
         "user_name": "Diana Valencia",
-        "user_email": "diana@example.com",
+        "user_email": "dianavalencia379@gmail.com",
     }
-    dashboard_data = _build_dashboard_data(connection, user_email="diana@example.com")
+    dashboard_data = _build_dashboard_data(connection, user_email="dianavalencia379@gmail.com")
 
     available, message = is_pdf_generation_available()
     if not available:

@@ -10,7 +10,7 @@ from domain.evolution_engine import generate_fictional_history
 SEED_USERS: list[dict[str, Any]] = [
     {
         "name": "Diana Valencia",
-        "email": "diana@example.com",
+        "email": "dianavalencia379@gmail.com",
         "portfolio": {
             "name": "Growth USA",
             "positions": [

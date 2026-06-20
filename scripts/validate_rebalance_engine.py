@@ -7,7 +7,7 @@ from domain.rebalance_engine import build_rebalance_advisor_snapshot
 
 
 USER_EMAILS = (
-    "diana@example.com",
+    "dianavalencia379@gmail.com",
     "antonio@example.com",
     "jose@example.com",
 )
