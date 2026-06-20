@@ -1,0 +1,33 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+    "python.terminal.activateEnvironment": true,
+    "jupyter.jupyterServerType": "local",
+    "terminal.integrated.env.windows": {
+      "VIRTUAL_ENV": "${workspaceFolder}\\.venv",
+      "PATH": "${workspaceFolder}\\.venv\\Scripts;${env:PATH}"
+    },
+    "python.analysis.venvPath": "${workspaceFolder}",
+    "python.analysis.venv": ".venv",
+    "python.analysis.extraPaths": [
+      "${workspaceFolder}\\.venv\\Lib\\site-packages"
+    ]
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-toolsai.datawrangler",
+      "mechatroner.rainbow-csv",
+      "bierner.markdown-mermaid",
+      "hediet.vscode-drawio",
+      "cweijan.vscode-database-client2"
+    ],
+    "unwantedRecommendations": [
+      "ms-azuretools.vscode-docker"
+    ]
+  }
+}

@@ -193,7 +193,7 @@ def fetch_price_history(
     interval: str = "1d",
     prefer_live_data: bool = True,
 ) -> PriceHistoryResult:
-    """Obtiene precios históricos y usa datos simulados si falla la descarga real."""
+    """Obtiene precios históricos desde Yahoo Finance. Si prefer_live_data es False, devuelve datos simulados."""
 
     normalized = _normalized_tickers(tickers)
     warnings: list[str] = []
@@ -213,10 +213,12 @@ def fetch_price_history(
                     warnings=live_result.warnings,
                     metadata=live_result.metadata,
                 )
-            warnings.extend(live_result.warnings)
-            warnings.append("Descarga parcial detectada; se aplicará fallback simulado para mantener cobertura completa.")
-        except Exception as exc:  # pragma: no cover - depende de red/entorno
-            warnings.append(f"Fallo de descarga Yahoo Finance: {exc}")
+            raise RuntimeError(
+                f"Descarga parcial de Yahoo Finance para los tickers {normalized}. "
+                f"Columnas recibidas: {list(live_prices.columns)}"
+            )
+        except Exception as exc:
+            raise RuntimeError(f"Fallo al descargar precios reales de Yahoo Finance: {exc}") from exc
 
     simulated_prices = generate_simulated_price_history(normalized, lookback_days=lookback_days)
     return PriceHistoryResult(
