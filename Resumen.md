@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dashboard_Financiero
 
 ## Resumen general del proyecto
@@ -20,6 +21,58 @@ La persistencia del proyecto está implementada con SQLite. El esquema real trab
 - `portfolios`: guarda los portfolios asociados a cada usuario.
 - `positions`: almacena las posiciones de cada portfolio.
 - `portfolio_history`: registra la evolución histórica del valor total.
+=======
+# **Dashboard_Financiero**
+
+    Dashboard_Financiero es una aplicación web financiera desarrollada en Python cuyo objetivo es gestionar y analizar portfolios de inversión de múltiples usuarios.
+    
+    El proyecto permite demostrar el uso de una base de datos, visualización de datos financieros, cálculo de pesos de cartera, generación de recomendaciones de rebalanceo mediante el método Hierarchical Risk Parity (HRP), creación de informes PDF y automatización del envío trimestral de informes mediante una API.
+    
+    La aplicación está pensada como un proyecto académico, por lo que los datos utilizados pueden ser ficticios o simulados. Las recomendaciones generadas no constituyen asesoramiento financiero real.
+
+**¿Qué va a hacer la aplicación?**
+
+    La aplicación permitirá seleccionar distintos usuarios, cada uno con su propio portfolio de inversión guardado en base de datos. Al elegir un usuario, el dashboard mostrará la información correspondiente a su cartera.
+    
+    Las funcionalidades principales serán:
+    
+    Gestión de varios usuarios.
+    Portfolio independiente para cada usuario.
+    Almacenamiento de datos en SQLite.
+    Visualización del valor total de la cartera.
+    Cálculo del peso actual de cada activo.
+    Gráficos de composición del portfolio.
+    Evolución histórica ficticia de varios años.
+    Advisor financiero basado en HRP.
+    Tabla de rebalanceo con acciones recomendadas.
+    Generación de informes financieros en PDF.
+    API preparada para automatización externa con Zapier o Make.
+    Arquitectura general
+    flowchart TD
+            A[Usuario] --> B[Dashboard Streamlit]
+            B --> C[(Base de datos SQLite)]
+            B --> D[Módulo Portfolio]
+            B --> E[Módulo Advisor HRP]
+            B --> F[Módulo Evolución Histórica]
+            B --> G[Generador PDF]
+        
+            E --> H[Datos históricos o simulados]
+            E --> I[Cálculo de pesos HRP]
+            I --> J[Tabla de rebalanceo]
+        
+            K[Zapier / Make] --> L[API FastAPI]
+            L --> C
+            L --> G
+        Flujo principal
+        flowchart LR
+            A[Seleccionar usuario] --> B[Consultar portfolio]
+            B --> C[Calcular valor y pesos actuales]
+            C --> D[Mostrar dashboard]
+            D --> E[Ejecutar Advisor HRP]
+            E --> F[Generar recomendación]
+            F --> G[Crear informe PDF]
+    Base de datos
+>>>>>>> f530ab5b2edb1d6588171c902f0a0dbf5e100198
 
 La inicialización está resuelta desde `data_layer/db.py` y también puede ejecutarse con `scripts/init_db.py`. Si la base todavía está vacía, el sistema inserta automáticamente datos seed para tres usuarios de ejemplo, cada uno con su portfolio, sus posiciones y un histórico mensual ya calculado.
 
@@ -43,6 +96,7 @@ La evolución histórica parte de los registros de `portfolio_history` y genera 
 - drawdown actual,
 - mejor y peor periodo.
 
+<<<<<<< HEAD
 Como el proyecto es académico, esta evolución está basada en históricos ficticios pero consistentes. Aun así, la implementación no se queda solo en dibujar una línea: realmente transforma la serie en métricas interpretables que luego se reutilizan en la pestaña de evolución, en el resumen general y en el PDF.
 
 ## Cómo funciona el advisor HRP
@@ -160,3 +214,8 @@ Lo que queda condicionado no es tanto el diseño del proyecto como algunos aspec
 En conjunto, Dashboard_Financiero ya no es solo una idea de fases futuras, sino una base funcional bastante completa para demostrar un flujo financiero end to end: datos persistidos, análisis de cartera, evolución temporal, recomendación de rebalanceo, visualización web, exportación documental y exposición por API.
 
 Para una entrega académica, el resultado es sólido porque conecta varias piezas reales de ingeniería de software sin ocultar sus límites: trabaja con datos demostrativos, reconoce dependencias del entorno y deja documentado qué partes son plenamente operativas y cuáles dependen de librerías o servicios externos.
+=======
+Este proyecto se desarrolla con fines educativos.
+Los datos pueden ser ficticios o simulados.
+Las recomendaciones del Advisor HRP no deben interpretarse como asesoramiento financiero profesional.
+>>>>>>> f530ab5b2edb1d6588171c902f0a0dbf5e100198
