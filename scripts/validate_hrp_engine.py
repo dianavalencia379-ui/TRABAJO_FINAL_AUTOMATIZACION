@@ -7,7 +7,7 @@ from domain.hrp_engine import build_hrp_portfolio_snapshot
 
 
 USER_EMAILS = (
-    "dianavalencia379@gmail.com",
+    "diana@example.com",
     "antonio@example.com",
     "jose@example.com",
 )
