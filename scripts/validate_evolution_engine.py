@@ -2,6 +2,13 @@ from __future__ import annotations
 
 from pprint import pprint
 
+import sys
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 from data_layer.db import initialize_database
 from domain.evolution_engine import build_evolution_snapshot_from_db
 
