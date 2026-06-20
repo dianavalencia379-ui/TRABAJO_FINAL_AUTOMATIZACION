@@ -8,18 +8,19 @@ Esta guía detalla el proceso paso a paso para que cada uno de los 7 componentes
 1. Abre **Antigravity IDE**.
 2. Ve a `File` -> `Open Workspace from File...` y selecciona el archivo de espacio de trabajo raíz:
    ```text
-   APF.code-workspace
+   Proyecto.code-workspace
    ```
 3. Esto cargará la estructura del proyecto y configurará los directorios de trabajo correctos.
 
 ---
 
 ## Paso 2: Creación del Entorno Virtual y Dependencias
-El proyecto utiliza **`uv`** como gestor rápido de paquetes y entornos virtuales. Sigue estos comandos en la terminal integrada de Antigravity (PowerShell/Bash):
+El proyecto utiliza **`uv`** como gestor rápido de paquetes y entornos virtuales de Python. Sigue estos comandos en la terminal integrada de Antigravity (PowerShell/Bash):
 
 1. **Crear el entorno virtual** `.venv` con Python 3.12 (versión estable recomendada para asegurar compatibilidad con NumPy 2.4, Pandas 3.0 y SciPy 1.18):
    ```bash
    uv venv --python 3.12
+   .venv\Scripts\activate (linux) o bien .venv\Scripts\activate.ps1 (windows)
    ```
 2. **Instalar y sincronizar dependencias** desde el manifiesto `requirements.txt`:
    ```bash
@@ -50,7 +51,7 @@ Para precargar los 3 usuarios de demostración (`Diana Valencia`, `Antonio Ruiz`
 
 1. Ejecuta el script de inicialización en la terminal:
    ```bash
-   uv run python scripts/init_db.py
+   uv run python -m scripts.init_db
    ```
 2. Esto creará el archivo de base de datos en `data/dashboard_financiero.db` y las carpetas requeridas.
 
