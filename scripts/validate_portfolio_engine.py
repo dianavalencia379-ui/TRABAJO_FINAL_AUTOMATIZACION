@@ -7,6 +7,7 @@ from domain.portfolio_engine import build_portfolio_snapshot
 
 
 def main() -> int:
+    """Ejecuta una validación manual del snapshot consolidado de portfolio."""
     db_result = initialize_database(reset=False)
     snapshot = build_portfolio_snapshot()
 

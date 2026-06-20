@@ -7,12 +7,14 @@ from typing import Mapping
 
 
 def _strip_optional_quotes(value: str) -> str:
+    """Elimina comillas envolventes opcionales de un valor de configuración."""
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
         return value[1:-1]
     return value
 
 
 def _load_dotenv(env_file: Path) -> dict[str, str]:
+    """Carga pares clave-valor simples desde un archivo .env."""
     if not env_file.exists():
         return {}
 
@@ -39,6 +41,7 @@ def _get_env_value(
     dotenv_values: Mapping[str, str],
     default: str,
 ) -> str:
+    """Obtiene una variable priorizando el entorno sobre el archivo .env."""
     value = environ.get(name)
     if value is not None:
         return value
@@ -51,6 +54,7 @@ def _get_first_secret(
     environ: Mapping[str, str],
     dotenv_values: Mapping[str, str],
 ) -> tuple[str | None, str | None]:
+    """Devuelve el primer secreto disponible junto con el nombre de su variable."""
     for name in names:
         value = environ.get(name)
         if value:
@@ -77,29 +81,36 @@ class Settings:
 
     @property
     def base_dir(self) -> Path:
+        """Devuelve la carpeta base del proyecto."""
         return Path(__file__).resolve().parent
 
     @property
     def database_path(self) -> Path:
+        """Compone la ruta completa del archivo SQLite."""
         return self.base_dir / self.data_dirname / self.database_name
 
     @property
     def data_dir(self) -> Path:
+        """Expone la carpeta configurada para datos persistentes."""
         return self.base_dir / self.data_dirname
 
     @property
     def reports_dir(self) -> Path:
+        """Expone la carpeta lógica asociada a reportes del proyecto."""
         return self.base_dir / self.reports_dirname
 
     @property
     def generated_reports_dir(self) -> Path:
+        """Expone la carpeta donde se guardan los PDFs generados."""
         return self.data_dir / self.generated_reports_dirname
 
     @property
     def has_api_key(self) -> bool:
+        """Indica si existe una API key cargada en la configuración."""
         return bool(self.api_key)
 
     def require_api_key(self) -> str:
+        """Entrega la API key obligatoria o lanza un error descriptivo."""
         if self.api_key:
             return self.api_key
 
@@ -114,6 +125,7 @@ def build_settings(
     base_dir: Path | None = None,
     environ: Mapping[str, str] | None = None,
 ) -> Settings:
+    """Construye la configuración efectiva a partir del entorno y .env."""
     resolved_base_dir = base_dir or Path(__file__).resolve().parent
     resolved_environ = os.environ if environ is None else environ
     dotenv_values = _load_dotenv(resolved_base_dir / ".env")

@@ -7,6 +7,7 @@ from domain.portfolio_engine import build_portfolio_snapshot
 
 
 def _build_seeded_connection() -> sqlite3.Connection:
+    """Crea una base en memoria con datos seed para pruebas de portfolio."""
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -16,6 +17,7 @@ def _build_seeded_connection() -> sqlite3.Connection:
 
 
 def test_build_portfolio_snapshot_aggregates_seeded_data() -> None:
+    """Verifica que el snapshot consolide correctamente los datos seed."""
     connection = _build_seeded_connection()
 
     snapshot = build_portfolio_snapshot(connection=connection)
@@ -39,6 +41,7 @@ def test_build_portfolio_snapshot_aggregates_seeded_data() -> None:
 
 
 def test_build_portfolio_snapshot_filters_single_user() -> None:
+    """Comprueba que el snapshot pueda filtrarse por usuario."""
     connection = _build_seeded_connection()
 
     snapshot = build_portfolio_snapshot(
@@ -60,6 +63,7 @@ def test_build_portfolio_snapshot_filters_single_user() -> None:
 
 
 def test_build_portfolio_snapshot_returns_empty_structure_when_no_matches() -> None:
+    """Asegura una estructura vacía consistente cuando no hay coincidencias."""
     connection = _build_seeded_connection()
 
     snapshot = build_portfolio_snapshot(

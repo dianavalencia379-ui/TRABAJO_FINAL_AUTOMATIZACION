@@ -23,6 +23,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_generate_report_endpoint_returns_pdf_reference(tmp_path: Path, monkeypatch) -> None:
+    """Verifica que el endpoint devuelva la referencia del PDF generado."""
     monkeypatch.setattr(api, "ensure_generated_reports_directory", lambda: tmp_path)
     monkeypatch.setattr(api, "is_pdf_generation_available", lambda: (True, None))
     monkeypatch.setattr(
@@ -53,6 +54,7 @@ def test_generate_report_endpoint_returns_pdf_reference(tmp_path: Path, monkeypa
 
 
 def test_generate_report_endpoint_returns_404_for_unknown_user() -> None:
+    """Comprueba la respuesta 404 cuando el usuario solicitado no existe."""
     client = TestClient(api.app)
 
     response = client.post("/api/report/9999")
@@ -63,6 +65,7 @@ def test_generate_report_endpoint_returns_404_for_unknown_user() -> None:
 
 
 def test_generate_report_endpoint_handles_missing_reportlab(monkeypatch) -> None:
+    """Valida el error controlado cuando ReportLab no está disponible."""
     client = TestClient(api.app)
     monkeypatch.setattr(api, "is_pdf_generation_available", lambda: (False, "ReportLab no está disponible."))
 
@@ -75,6 +78,7 @@ def test_generate_report_endpoint_handles_missing_reportlab(monkeypatch) -> None
 
 
 def test_generate_report_endpoint_generates_real_pdf_when_available(tmp_path: Path, monkeypatch) -> None:
+    """Comprueba la generación real del PDF cuando el entorno lo permite."""
     available, message = api.is_pdf_generation_available()
     if not available:
         pytest.skip(message or "La generación PDF no está disponible en este entorno.")

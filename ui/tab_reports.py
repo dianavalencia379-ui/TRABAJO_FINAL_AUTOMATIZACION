@@ -15,6 +15,7 @@ from reports.pdf_generator import (
 
 
 def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, Any]) -> None:
+    """Centraliza las exportaciones CSV, JSON y PDF del dashboard."""
     if not selected_user:
         st.info("Selecciona un usuario para preparar informes.")
         return

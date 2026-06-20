@@ -7,6 +7,7 @@ from domain.evolution_engine import build_evolution_snapshot_from_db
 
 
 def main() -> int:
+    """Valida por consola la salida agregada del motor de evolución."""
     db_result = initialize_database(reset=False)
     snapshot = build_evolution_snapshot_from_db()
 

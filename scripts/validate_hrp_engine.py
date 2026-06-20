@@ -14,6 +14,7 @@ USER_EMAILS = (
 
 
 def main() -> int:
+    """Ejecuta una validación manual del snapshot HRP para varios usuarios."""
     db_result = initialize_database(reset=False)
     print("Base lista:", db_result["is_functional"])
 

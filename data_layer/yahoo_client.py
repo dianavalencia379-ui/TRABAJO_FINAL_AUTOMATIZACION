@@ -59,6 +59,7 @@ class PriceHistoryResult:
 
 
 def _normalized_tickers(tickers: list[str] | tuple[str, ...]) -> list[str]:
+    """Normaliza tickers, elimina duplicados y valida que exista al menos uno."""
     normalized: list[str] = []
     seen: set[str] = set()
     for ticker in tickers:
@@ -72,11 +73,13 @@ def _normalized_tickers(tickers: list[str] | tuple[str, ...]) -> list[str]:
 
 
 def _stable_seed(*parts: str) -> int:
+    """Construye una semilla determinista a partir de varios textos."""
     digest = hashlib.sha256("::".join(parts).encode("utf-8")).hexdigest()
     return int(digest[:16], 16)
 
 
 def _resolve_close_frame(raw_data: pd.DataFrame, tickers: list[str]) -> pd.DataFrame:
+    """Extrae y ordena la serie de cierres desde la respuesta de Yahoo."""
     if raw_data.empty:
         return pd.DataFrame()
 
@@ -102,6 +105,7 @@ def _download_yahoo_prices(
     lookback_days: int,
     interval: str,
 ) -> PriceHistoryResult:
+    """Descarga precios reales desde Yahoo Finance y valida su cobertura."""
     if yf is None:
         raise RuntimeError("yfinance no está instalado en el entorno actual.")
 

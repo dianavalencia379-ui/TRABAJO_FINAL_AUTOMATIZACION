@@ -6,6 +6,7 @@ from data_layer.db import get_database_path, initialize_database
 
 
 def parse_args() -> argparse.Namespace:
+    """Define y parsea los argumentos CLI del inicializador de base."""
     parser = argparse.ArgumentParser(description="Inicializa la base SQLite del dashboard.")
     parser.add_argument(
         "--reset",
@@ -16,6 +17,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    """Inicializa la base y muestra un resumen de validación en consola."""
     args = parse_args()
     result = initialize_database(reset=args.reset)
 

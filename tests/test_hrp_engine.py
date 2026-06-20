@@ -8,6 +8,7 @@ from domain.hrp_engine import build_hrp_portfolio_snapshot, calculate_hrp_weight
 
 
 def _build_seeded_connection() -> sqlite3.Connection:
+    """Crea una base en memoria con datos seed para pruebas HRP."""
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -17,6 +18,7 @@ def _build_seeded_connection() -> sqlite3.Connection:
 
 
 def test_generate_simulated_price_history_returns_complete_frame() -> None:
+    """Valida que el histórico simulado cubra todos los tickers solicitados."""
     prices = generate_simulated_price_history(["AAPL", "MSFT", "NVDA"], lookback_days=120)
 
     assert list(prices.columns) == ["AAPL", "MSFT", "NVDA"]
@@ -26,6 +28,7 @@ def test_generate_simulated_price_history_returns_complete_frame() -> None:
 
 
 def test_fetch_price_history_uses_simulated_fallback_when_live_disabled() -> None:
+    """Comprueba el uso del fallback simulado cuando se desactiva Yahoo."""
     result = fetch_price_history(["AAPL", "MSFT", "NVDA"], lookback_days=90, prefer_live_data=False)
 
     assert result.source == "simulated"
@@ -35,6 +38,7 @@ def test_fetch_price_history_uses_simulated_fallback_when_live_disabled() -> Non
 
 
 def test_calculate_hrp_weights_sums_to_one() -> None:
+    """Verifica que los pesos HRP calculados formen una asignación válida."""
     prices = generate_simulated_price_history(["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN"], lookback_days=180)
 
     result = calculate_hrp_weights(prices)
@@ -47,6 +51,7 @@ def test_calculate_hrp_weights_sums_to_one() -> None:
 
 
 def test_build_hrp_portfolio_snapshot_returns_interpretable_weights() -> None:
+    """Asegura que el snapshot HRP devuelva pesos y diagnósticos interpretables."""
     connection = _build_seeded_connection()
 
     snapshot = build_hrp_portfolio_snapshot(

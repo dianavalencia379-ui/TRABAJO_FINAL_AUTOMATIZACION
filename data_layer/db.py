@@ -57,24 +57,29 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
 
 
 def _timestamp() -> str:
+    """Devuelve la marca temporal fija usada al sembrar datos demo."""
     return "2026-06-19T09:00:00"
 
 
 def get_database_path() -> Path:
+    """Obtiene la ruta configurada para la base SQLite principal."""
     return settings.database_path
 
 
 def ensure_database_directory() -> Path:
+    """Garantiza que exista la carpeta de datos de la base."""
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     return settings.data_dir
 
 
 def ensure_generated_reports_directory() -> Path:
+    """Garantiza que exista la carpeta de PDFs generados."""
     settings.generated_reports_dir.mkdir(parents=True, exist_ok=True)
     return settings.generated_reports_dir
 
 
 def get_connection(database_path: Path | None = None) -> sqlite3.Connection:
+    """Abre una conexión SQLite con filas accesibles por nombre."""
     ensure_database_directory()
     connection = sqlite3.connect(database_path or get_database_path())
     connection.row_factory = sqlite3.Row
@@ -83,12 +88,14 @@ def get_connection(database_path: Path | None = None) -> sqlite3.Connection:
 
 
 def create_schema(connection: sqlite3.Connection) -> None:
+    """Crea el esquema base de tablas e índices si aún no existe."""
     for statement in SCHEMA_STATEMENTS:
         connection.execute(statement)
     connection.commit()
 
 
 def reset_database(database_path: Path | None = None) -> Path:
+    """Elimina la base existente para forzar una recreación limpia."""
     target = database_path or get_database_path()
     ensure_database_directory()
     if target.exists():
@@ -97,11 +104,13 @@ def reset_database(database_path: Path | None = None) -> Path:
 
 
 def is_seeded(connection: sqlite3.Connection) -> bool:
+    """Comprueba si la base ya contiene usuarios cargados."""
     row = connection.execute("SELECT COUNT(*) AS total FROM users").fetchone()
     return bool(row and row["total"] > 0)
 
 
 def seed_database(connection: sqlite3.Connection) -> bool:
+    """Inserta los datos ficticios iniciales cuando la base está vacía."""
     if is_seeded(connection):
         return False
 
@@ -151,6 +160,7 @@ def seed_database(connection: sqlite3.Connection) -> bool:
 
 
 def initialize_database(reset: bool = False) -> dict[str, Any]:
+    """Inicializa esquema, seed y validaciones básicas de la base."""
     if reset:
         reset_database()
 
@@ -167,6 +177,7 @@ def initialize_database(reset: bool = False) -> dict[str, Any]:
 
 
 def get_table_counts(connection: sqlite3.Connection) -> dict[str, int]:
+    """Cuenta los registros de cada tabla principal del modelo."""
     table_names = ("users", "portfolios", "positions", "portfolio_history")
     return {
         table_name: connection.execute(
@@ -177,6 +188,7 @@ def get_table_counts(connection: sqlite3.Connection) -> dict[str, int]:
 
 
 def get_portfolio_summaries(connection: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Recupera un resumen agregado por portfolio para validación y UI."""
     return connection.execute(
         """
         SELECT
@@ -210,6 +222,7 @@ def get_portfolio_summaries(connection: sqlite3.Connection) -> list[sqlite3.Row]
 
 
 def get_users(connection: sqlite3.Connection) -> list[sqlite3.Row]:
+    """Lista usuarios con conteos y capital estimado consolidado."""
     return connection.execute(
         """
         SELECT
@@ -230,6 +243,7 @@ def get_users(connection: sqlite3.Connection) -> list[sqlite3.Row]:
 
 
 def get_user_by_id(connection: sqlite3.Connection, user_id: int) -> sqlite3.Row | None:
+    """Busca un usuario por ID junto con sus agregados principales."""
     return connection.execute(
         """
         SELECT
@@ -256,6 +270,7 @@ def get_user_portfolios(
     user_email: str | None = None,
     user_id: int | None = None,
 ) -> list[sqlite3.Row]:
+    """Devuelve los portfolios filtrados por usuario o email."""
     query = """
         SELECT
             p.id AS portfolio_id,
@@ -298,6 +313,7 @@ def get_portfolio_history_series(
     portfolio_id: int | None = None,
     user_email: str | None = None,
 ) -> list[sqlite3.Row]:
+    """Obtiene la serie histórica agregada filtrada por portfolio o usuario."""
     query = """
         SELECT
             ph.date AS date,
@@ -326,6 +342,7 @@ def get_portfolio_history_series(
 
 
 def get_portfolio_evolution_summaries(connection: sqlite3.Connection) -> list[dict[str, Any]]:
+    """Construye métricas de evolución para cada portfolio persistido."""
     from domain.evolution_engine import build_evolution_snapshot_from_db
 
     evolution_summaries: list[dict[str, Any]] = []
@@ -352,6 +369,7 @@ def get_portfolio_positions(
     portfolio_id: int | None = None,
     user_email: str | None = None,
 ) -> list[sqlite3.Row]:
+    """Recupera posiciones enriquecidas con datos de portfolio y usuario."""
     query = """
         SELECT
             pos.id AS position_id,
@@ -388,6 +406,7 @@ def get_portfolio_positions(
 
 
 def verify_database(connection: sqlite3.Connection) -> dict[str, Any]:
+    """Valida que la base sembrada tenga cobertura suficiente para la app."""
     counts = get_table_counts(connection)
     summaries = get_portfolio_summaries(connection)
     evolution_summaries = get_portfolio_evolution_summaries(connection)

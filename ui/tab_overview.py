@@ -7,6 +7,7 @@ import streamlit as st
 
 
 def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, Any]) -> None:
+    """Muestra el resumen ejecutivo del usuario seleccionado."""
     if not selected_user:
         st.info("Selecciona un usuario para ver el resumen financiero.")
         return

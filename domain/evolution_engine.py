@@ -10,14 +10,17 @@ from typing import Any, Iterable, Mapping
 
 
 def _round_amount(value: float) -> float:
+    """Redondea valores monetarios de la serie histórica."""
     return round(float(value), 2)
 
 
 def _round_pct(value: float) -> float:
+    """Convierte una variación decimal en porcentaje redondeado."""
     return round(float(value) * 100, 4)
 
 
 def _parse_date(raw_value: Any) -> date:
+    """Normaliza una fecha admitiendo strings ISO y objetos date/datetime."""
     if isinstance(raw_value, datetime):
         return raw_value.date()
     if isinstance(raw_value, date):
@@ -30,6 +33,7 @@ def _parse_date(raw_value: Any) -> date:
 def _normalize_history_records(
     history_records: Iterable[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
+    """Ordena y tipa el histórico recibido antes de calcular métricas."""
     normalized: list[dict[str, Any]] = []
     for record in history_records:
         record_date = _parse_date(record["date"])
@@ -45,6 +49,7 @@ def _normalize_history_records(
 
 
 def _empty_metrics() -> dict[str, Any]:
+    """Devuelve el bloque vacío de métricas de evolución."""
     return {
         "start_date": None,
         "end_date": None,
@@ -62,6 +67,7 @@ def _empty_metrics() -> dict[str, Any]:
 
 
 def _month_end(year: int, month: int) -> date:
+    """Calcula el último día calendario de un mes dado."""
     return date(year, month, calendar.monthrange(year, month)[1])
 
 

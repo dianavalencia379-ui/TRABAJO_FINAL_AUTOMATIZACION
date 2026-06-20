@@ -7,6 +7,7 @@ import streamlit as st
 
 
 def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, Any]) -> None:
+    """Muestra métricas y series de evolución histórica del portfolio."""
     if not selected_user:
         st.info("Selecciona un usuario para revisar la evolución histórica.")
         return

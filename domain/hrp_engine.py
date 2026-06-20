@@ -23,10 +23,12 @@ from data_layer.yahoo_client import fetch_price_history
 
 
 def _round_amount(value: float, digits: int = 6) -> float:
+    """Redondea métricas numéricas del motor HRP."""
     return round(float(value), digits)
 
 
 def _normalize_price_frame(prices: pd.DataFrame) -> pd.DataFrame:
+    """Limpia y valida el marco de precios antes de aplicar HRP."""
     if prices.empty:
         raise ValueError("La serie de precios está vacía.")
 
@@ -40,6 +42,7 @@ def _normalize_price_frame(prices: pd.DataFrame) -> pd.DataFrame:
 
 
 def calculate_returns(prices: pd.DataFrame) -> pd.DataFrame:
+    """Convierte precios en rentabilidades útiles para el algoritmo HRP."""
     frame = _normalize_price_frame(prices)
     returns = frame.pct_change().replace([np.inf, -np.inf], np.nan).dropna(how="all")
     returns = returns.dropna(axis=1, how="all")
@@ -52,12 +55,14 @@ def calculate_returns(prices: pd.DataFrame) -> pd.DataFrame:
 
 
 def correlation_to_distance(correlation: pd.DataFrame) -> pd.DataFrame:
+    """Transforma una matriz de correlación en distancias para clustering."""
     clipped = correlation.clip(lower=-1.0, upper=1.0)
     distance_values = np.sqrt((1.0 - clipped) / 2.0)
     return pd.DataFrame(distance_values, index=correlation.index, columns=correlation.columns)
 
 
 def _inverse_variance_weights(covariance: pd.DataFrame) -> pd.Series:
+    """Calcula pesos inversos a la varianza para un subconjunto de activos."""
     diagonal = np.diag(covariance.values)
     clipped = np.clip(diagonal, 1e-12, None)
     inverse = 1.0 / clipped
@@ -66,6 +71,7 @@ def _inverse_variance_weights(covariance: pd.DataFrame) -> pd.Series:
 
 
 def _cluster_variance(covariance: pd.DataFrame, cluster_items: list[str]) -> float:
+    """Estima la varianza agregada de un cluster de activos."""
     cluster_cov = covariance.loc[cluster_items, cluster_items]
     cluster_weights = _inverse_variance_weights(cluster_cov)
     variance = float(cluster_weights.T @ cluster_cov.values @ cluster_weights)
@@ -73,9 +79,11 @@ def _cluster_variance(covariance: pd.DataFrame, cluster_items: list[str]) -> flo
 
 
 def _fallback_cluster_order(distance: pd.DataFrame) -> list[str]:
+    """Genera un orden de clusters sin SciPy usando distancias medias."""
     clusters: list[list[str]] = [[label] for label in distance.index]
 
     def average_distance(left: list[str], right: list[str]) -> float:
+        """Calcula la distancia media entre dos grupos de activos."""
         values = distance.loc[left, right].to_numpy(dtype=float)
         return float(values.mean())
 
@@ -103,6 +111,7 @@ def _fallback_cluster_order(distance: pd.DataFrame) -> list[str]:
 
 
 def build_cluster_order(distance: pd.DataFrame) -> tuple[list[str], str]:
+    """Obtiene el orden jerárquico de activos y el método usado."""
     if linkage is None or leaves_list is None or squareform is None:
         return _fallback_cluster_order(distance), "average-fallback"
 
@@ -114,6 +123,7 @@ def build_cluster_order(distance: pd.DataFrame) -> tuple[list[str], str]:
 
 
 def recursive_bisection(covariance: pd.DataFrame, sorted_assets: list[str]) -> pd.Series:
+    """Asigna pesos HRP repartiendo riesgo por bisección recursiva."""
     weights = pd.Series(1.0, index=sorted_assets)
     clusters: list[list[str]] = [sorted_assets]
 
@@ -137,6 +147,7 @@ def recursive_bisection(covariance: pd.DataFrame, sorted_assets: list[str]) -> p
 
 
 def calculate_hrp_weights(prices: pd.DataFrame) -> dict[str, Any]:
+    """Ejecuta el flujo HRP completo y devuelve pesos y matrices auxiliares."""
     normalized_prices = _normalize_price_frame(prices)
     returns = calculate_returns(normalized_prices)
     covariance = returns.cov()
@@ -160,6 +171,7 @@ def calculate_hrp_weights(prices: pd.DataFrame) -> dict[str, Any]:
 
 
 def _build_current_weights(rows: list[sqlite3.Row]) -> tuple[dict[str, dict[str, Any]], float]:
+    """Consolida pesos actuales por ticker a partir de posiciones SQLite."""
     positions: dict[str, dict[str, Any]] = {}
     total_value = 0.0
 

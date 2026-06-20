@@ -7,6 +7,7 @@ import streamlit as st
 
 
 def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, Any]) -> None:
+    """Renderiza la comparación entre pesos actuales y recomendados por HRP."""
     if not selected_user:
         st.info("Selecciona un usuario para ver el advisor HRP.")
         return

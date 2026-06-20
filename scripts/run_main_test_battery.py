@@ -14,6 +14,7 @@ MAIN_TEST_BATTERY = [
 
 
 def main() -> int:
+    """Ejecuta la batería principal de tests de regresión del proyecto."""
     project_root = Path(__file__).resolve().parents[1]
     test_targets = [str(project_root / relative_path) for relative_path in MAIN_TEST_BATTERY]
     print("Ejecutando batería principal de validación (Fase 11):")

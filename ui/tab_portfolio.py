@@ -7,6 +7,7 @@ import streamlit as st
 
 
 def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, Any]) -> None:
+    """Presenta la composición y el detalle completo del portfolio."""
     if not selected_user:
         st.info("Selecciona un usuario para explorar el portfolio.")
         return

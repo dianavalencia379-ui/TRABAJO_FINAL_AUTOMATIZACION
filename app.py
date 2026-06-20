@@ -20,6 +20,7 @@ from ui import tab_advisor, tab_evolution, tab_overview, tab_portfolio, tab_repo
 
 
 def _format_user_label(user: dict[str, Any]) -> str:
+    """Construye la etiqueta legible de un usuario para el selector lateral."""
     return (
         f"{user['user_name']} · {user['portfolio_count']} portfolio(s) · "
         f"{user['position_count']} posiciones"
@@ -28,6 +29,7 @@ def _format_user_label(user: dict[str, Any]) -> str:
 
 @st.cache_data(show_spinner=False)
 def load_users() -> list[dict[str, Any]]:
+    """Carga los usuarios disponibles junto con sus agregados principales."""
     with get_connection() as connection:
         return [dict(row) for row in get_users(connection)]
 
@@ -39,6 +41,7 @@ def load_dashboard_data(
     rebalance_threshold: float,
     prefer_live_data: bool,
 ) -> dict[str, Any]:
+    """Reúne todos los snapshots necesarios para renderizar el dashboard."""
     with get_connection() as connection:
         portfolio_snapshot = build_portfolio_snapshot(
             connection=connection,
@@ -75,6 +78,7 @@ def load_dashboard_data(
 
 
 def render_sidebar(users: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Renderiza el selector de usuario y devuelve la selección activa."""
     st.sidebar.header("Selección")
     if not users:
         st.sidebar.warning("No hay usuarios disponibles en la base de datos.")
@@ -98,6 +102,7 @@ def render_sidebar(users: list[dict[str, Any]]) -> dict[str, Any] | None:
 
 
 def main() -> None:
+    """Orquesta la inicialización y el render completo de la app Streamlit."""
     st.set_page_config(
         page_title=settings.app_name,
         page_icon="📊",

@@ -8,6 +8,7 @@ from config import build_settings
 
 
 def test_build_settings_reads_api_key_from_dotenv(tmp_path: Path) -> None:
+    """Verifica la carga de la API key desde un archivo .env."""
     (tmp_path / ".env").write_text(
         "API_KEY_ENV_VAR=EXTERNAL_SERVICE_KEY\nEXTERNAL_SERVICE_KEY=super-secret-value\n",
         encoding="utf-8",
@@ -21,6 +22,7 @@ def test_build_settings_reads_api_key_from_dotenv(tmp_path: Path) -> None:
 
 
 def test_build_settings_prefers_os_environment_over_dotenv(tmp_path: Path) -> None:
+    """Comprueba que el entorno tenga prioridad sobre .env."""
     (tmp_path / ".env").write_text(
         "DASHBOARD_API_KEY=dotenv-value\n",
         encoding="utf-8",
@@ -35,6 +37,7 @@ def test_build_settings_prefers_os_environment_over_dotenv(tmp_path: Path) -> No
 
 
 def test_settings_repr_does_not_expose_api_key(tmp_path: Path) -> None:
+    """Asegura que la representación de Settings no exponga secretos."""
     (tmp_path / ".env").write_text(
         "DASHBOARD_API_KEY=super-secret-value\n",
         encoding="utf-8",
@@ -46,6 +49,7 @@ def test_settings_repr_does_not_expose_api_key(tmp_path: Path) -> None:
 
 
 def test_require_api_key_raises_when_missing(tmp_path: Path) -> None:
+    """Comprueba el error esperado cuando falta la API key obligatoria."""
     settings = build_settings(base_dir=tmp_path, environ={})
 
     with pytest.raises(RuntimeError, match="Falta configurar la API key"):

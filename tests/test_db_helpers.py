@@ -6,6 +6,7 @@ from data_layer.db import create_schema, get_user_portfolios, get_users, seed_da
 
 
 def _build_seeded_connection() -> sqlite3.Connection:
+    """Crea una base en memoria con datos seed para probar helpers SQL."""
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -15,6 +16,7 @@ def _build_seeded_connection() -> sqlite3.Connection:
 
 
 def test_get_users_returns_seeded_users_with_aggregates() -> None:
+    """Valida que la consulta de usuarios entregue agregados poblados."""
     connection = _build_seeded_connection()
 
     rows = get_users(connection)
@@ -26,6 +28,7 @@ def test_get_users_returns_seeded_users_with_aggregates() -> None:
 
 
 def test_get_user_portfolios_filters_by_user_email() -> None:
+    """Comprueba el filtrado de portfolios por email de usuario."""
     connection = _build_seeded_connection()
 
     rows = get_user_portfolios(connection, user_email="diana@example.com")

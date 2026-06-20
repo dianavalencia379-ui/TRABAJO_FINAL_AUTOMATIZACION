@@ -16,6 +16,7 @@ from reports.pdf_generator import (
 
 
 def _build_seeded_connection() -> sqlite3.Connection:
+    """Crea una base en memoria con datos seed para pruebas de PDF."""
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -25,6 +26,7 @@ def _build_seeded_connection() -> sqlite3.Connection:
 
 
 def _build_dashboard_data(connection: sqlite3.Connection, *, user_email: str) -> dict[str, object]:
+    """Reúne los snapshots mínimos necesarios para probar el generador PDF."""
     portfolio_snapshot = build_portfolio_snapshot(
         connection=connection,
         user_email=user_email,
@@ -58,6 +60,7 @@ def _build_dashboard_data(connection: sqlite3.Connection, *, user_email: str) ->
 
 
 def test_build_report_payload_contains_required_sections() -> None:
+    """Verifica que el payload intermedio incluya las secciones obligatorias."""
     connection = _build_seeded_connection()
     selected_user = {
         "user_name": "Diana Valencia",
@@ -84,6 +87,7 @@ def test_build_report_payload_contains_required_sections() -> None:
 
 
 def test_generate_user_report_pdf_returns_pdf_or_clear_unavailable_message() -> None:
+    """Comprueba que el generador devuelva un PDF válido o un error claro."""
     connection = _build_seeded_connection()
     selected_user = {
         "user_name": "Diana Valencia",
@@ -108,6 +112,7 @@ def test_generate_user_report_pdf_returns_pdf_or_clear_unavailable_message() -> 
 
 
 def test_generate_user_report_pdf_can_be_persisted_to_disk(tmp_path) -> None:
+    """Comprueba que un PDF generado pueda persistirse correctamente en disco."""
     connection = _build_seeded_connection()
     selected_user = {
         "user_name": "Diana Valencia",

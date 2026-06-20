@@ -78,6 +78,7 @@ def _error_response(
     user_id: int | None = None,
     extra: dict[str, Any] | None = None,
 ) -> JSONResponse:
+    """Genera una respuesta JSON uniforme para errores de la API."""
     payload: dict[str, Any] = {
         "status": "error",
         "code": code,
@@ -91,6 +92,7 @@ def _error_response(
 
 
 def _build_dashboard_data(*, user_email: str) -> dict[str, Any]:
+    """Construye los datos consolidados que necesita el endpoint de reportes."""
     with get_connection() as connection:
         portfolio_snapshot = build_portfolio_snapshot(
             connection=connection,
@@ -127,6 +129,7 @@ def _build_dashboard_data(*, user_email: str) -> dict[str, Any]:
 
 
 def _build_relative_report_path(file_path: str) -> str:
+    """Calcula una ruta relativa al proyecto cuando es posible."""
     from pathlib import Path
 
     target_path = Path(file_path)
@@ -138,6 +141,7 @@ def _build_relative_report_path(file_path: str) -> str:
 
 @app.get("/health", tags=["system"])
 def healthcheck() -> dict[str, str]:
+    """Expone un chequeo básico de disponibilidad del servicio."""
     return {"status": "ok", "project": settings.app_name, "phase": "fase-9"}
 
 
@@ -147,6 +151,7 @@ def healthcheck() -> dict[str, str]:
     response_model=ReportGenerationResponse,
 )
 def generate_report(user_id: int) -> ReportGenerationResponse | JSONResponse:
+    """Genera y persiste un informe PDF para el usuario solicitado."""
     try:
         initialize_database(reset=False)
     except Exception as exc:

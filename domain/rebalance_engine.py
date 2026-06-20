@@ -15,10 +15,12 @@ DEFAULT_REBALANCE_THRESHOLD = 0.03
 
 
 def _round_amount(value: float, digits: int = 6) -> float:
+    """Redondea valores del advisor con la precisión indicada."""
     return round(float(value), digits)
 
 
 def _normalize_threshold(threshold: float) -> float:
+    """Normaliza el umbral aceptando valores fraccionales o porcentuales."""
     normalized = float(threshold)
     if normalized < 0:
         raise ValueError("El umbral de rebalanceo no puede ser negativo.")
@@ -28,6 +30,7 @@ def _normalize_threshold(threshold: float) -> float:
 
 
 def classify_rebalance_action(*, difference: float, threshold: float = DEFAULT_REBALANCE_THRESHOLD) -> str:
+    """Clasifica la acción de rebalanceo según la desviación del peso objetivo."""
     normalized_threshold = _normalize_threshold(threshold)
     if difference > normalized_threshold:
         return "increase"
@@ -43,6 +46,7 @@ def _empty_advisor_snapshot(
     threshold: float = DEFAULT_REBALANCE_THRESHOLD,
     warnings: list[str] | None = None,
 ) -> dict[str, Any]:
+    """Devuelve la salida vacía estándar del advisor de rebalanceo."""
     normalized_threshold = _normalize_threshold(threshold)
     return {
         "generated_at": datetime.now(UTC).isoformat(),

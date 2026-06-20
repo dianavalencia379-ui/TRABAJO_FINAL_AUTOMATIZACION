@@ -13,6 +13,7 @@ from domain.evolution_engine import (
 
 
 def _build_seeded_connection() -> sqlite3.Connection:
+    """Crea una base en memoria con datos seed para pruebas de evolución."""
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -22,6 +23,7 @@ def _build_seeded_connection() -> sqlite3.Connection:
 
 
 def test_generate_fictional_history_is_deterministic_and_monthly() -> None:
+    """Valida que el histórico ficticio sea determinista y mensual."""
     history = generate_fictional_history(
         start_value=100.0,
         monthly_return=0.01,
@@ -38,6 +40,7 @@ def test_generate_fictional_history_is_deterministic_and_monthly() -> None:
 
 
 def test_build_evolution_snapshot_calculates_returns_and_drawdown() -> None:
+    """Comprueba el cálculo de retornos y drawdown sobre una serie simple."""
     history = [
         {"date": "2024-01-31", "total_value": 100.0},
         {"date": "2024-02-29", "total_value": 110.0},
@@ -63,6 +66,7 @@ def test_build_evolution_snapshot_calculates_returns_and_drawdown() -> None:
 
 
 def test_build_evolution_snapshot_from_db_aggregates_seeded_history() -> None:
+    """Verifica la agregación completa del histórico almacenado en SQLite."""
     connection = _build_seeded_connection()
     seed_payload = build_seed_payload()
 
@@ -88,6 +92,7 @@ def test_build_evolution_snapshot_from_db_aggregates_seeded_history() -> None:
 
 
 def test_build_evolution_snapshot_from_db_filters_single_user() -> None:
+    """Comprueba que la evolución desde base pueda filtrarse por usuario."""
     connection = _build_seeded_connection()
 
     snapshot = build_evolution_snapshot_from_db(

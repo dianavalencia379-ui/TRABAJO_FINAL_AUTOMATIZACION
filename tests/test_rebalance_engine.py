@@ -7,6 +7,7 @@ from domain.rebalance_engine import build_rebalance_advisor_snapshot, classify_r
 
 
 def _build_seeded_connection() -> sqlite3.Connection:
+    """Crea una base en memoria con datos seed para pruebas de rebalanceo."""
     connection = sqlite3.connect(":memory:")
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
@@ -16,12 +17,14 @@ def _build_seeded_connection() -> sqlite3.Connection:
 
 
 def test_classify_rebalance_action_uses_configurable_threshold() -> None:
+    """Valida la clasificación de acciones según distintos umbrales."""
     assert classify_rebalance_action(difference=0.031, threshold=0.03) == "increase"
     assert classify_rebalance_action(difference=-0.031, threshold=3) == "reduce"
     assert classify_rebalance_action(difference=0.02, threshold=0.03) == "hold"
 
 
 def test_build_rebalance_advisor_snapshot_returns_table_ready_output() -> None:
+    """Asegura que el advisor produzca una tabla lista para UI y reportes."""
     connection = _build_seeded_connection()
 
     snapshot = build_rebalance_advisor_snapshot(
@@ -60,6 +63,7 @@ def test_build_rebalance_advisor_snapshot_returns_table_ready_output() -> None:
 
 
 def test_build_rebalance_advisor_snapshot_returns_empty_structure_when_no_matches() -> None:
+    """Verifica la salida vacía del advisor cuando no existen posiciones."""
     connection = _build_seeded_connection()
 
     snapshot = build_rebalance_advisor_snapshot(

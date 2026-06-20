@@ -12,16 +12,19 @@ from data_layer.db import get_connection, get_portfolio_positions
 
 
 def _round_amount(value: float) -> float:
+    """Redondea importes monetarios a dos decimales."""
     return round(float(value), 2)
 
 
 def _safe_weight(value: float, total: float) -> float:
+    """Calcula un peso porcentual evitando divisiones por cero."""
     if total <= 0:
         return 0.0
     return round((value / total) * 100, 4)
 
 
 def _empty_snapshot(*, portfolio_id: int | None = None, user_email: str | None = None) -> dict[str, Any]:
+    """Devuelve la estructura vacía estándar del snapshot de portfolio."""
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "filters": {

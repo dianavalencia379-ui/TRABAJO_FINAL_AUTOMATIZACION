@@ -25,6 +25,7 @@ class GeneratedPdfReport:
 
 
 def is_pdf_generation_available() -> tuple[bool, str | None]:
+    """Verifica si ReportLab está disponible para generar PDFs."""
     try:
         _load_reportlab()
     except ReportGenerationError as exc:
@@ -37,6 +38,7 @@ def build_report_payload(
     selected_user: dict[str, Any],
     dashboard_data: dict[str, Any],
 ) -> dict[str, Any]:
+    """Arma la estructura intermedia usada para renderizar el informe."""
     generated_at = datetime.now(UTC).isoformat()
     portfolio_snapshot = dashboard_data.get("portfolio_snapshot", {})
     evolution_snapshot = dashboard_data.get("evolution_snapshot", {})
@@ -213,6 +215,7 @@ def generate_user_report_pdf(
     selected_user: dict[str, Any],
     dashboard_data: dict[str, Any],
 ) -> GeneratedPdfReport:
+    """Genera el binario PDF final a partir de los snapshots del usuario."""
     payload = build_report_payload(
         selected_user=selected_user,
         dashboard_data=dashboard_data,
@@ -397,6 +400,7 @@ def generate_user_report_pdf(
 
 
 def build_report_filename(selected_user: dict[str, Any]) -> str:
+    """Construye un nombre de archivo estable y seguro para el PDF."""
     raw_email = str(selected_user.get("user_email", "usuario")).strip().lower()
     slug = re.sub(r"[^a-z0-9]+", "_", raw_email).strip("_") or "usuario"
     stamp = datetime.now(UTC).strftime("%Y%m%d")
@@ -404,6 +408,7 @@ def build_report_filename(selected_user: dict[str, Any]) -> str:
 
 
 def persist_generated_report(report: GeneratedPdfReport, *, output_dir: Path) -> Path:
+    """Guarda el PDF generado en disco y devuelve su ruta final."""
     output_dir.mkdir(parents=True, exist_ok=True)
     file_path = output_dir / report.file_name
     file_path.write_bytes(report.content)
@@ -417,6 +422,7 @@ def _build_final_comment(
     advisor_summary: dict[str, Any],
     warnings: list[str],
 ) -> str:
+    """Resume en texto el estado del portfolio y las alertas del informe."""
     total_value = _format_currency(portfolio_summary.get("total_current_value", 0.0))
     cumulative_return = _format_pct(evolution_metrics.get("cumulative_return_pct", 0.0))
     annualized_return = _format_pct(evolution_metrics.get("annualized_return_pct", 0.0))
@@ -440,6 +446,7 @@ def _build_table(
     rows: list[list[str]],
     widths: list[int],
 ) -> Any:
+    """Crea una tabla ReportLab con el estilo visual estándar del reporte."""
     colors = modules["colors"]
     platypus = modules["platypus"]
 
@@ -465,9 +472,11 @@ def _build_table(
 
 
 def _page_header_footer(modules: dict[str, Any]):
+    """Devuelve el callback que dibuja cabecera y pie de página del PDF."""
     colors = modules["colors"]
 
     def _callback(canvas: Any, document: Any) -> None:
+        """Pinta metadatos del informe en cada página del documento."""
         canvas.saveState()
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor("#475569"))
@@ -479,6 +488,7 @@ def _page_header_footer(modules: dict[str, Any]):
 
 
 def _load_reportlab() -> dict[str, Any]:
+    """Importa dinámicamente los módulos de ReportLab requeridos."""
     try:
         return {
             "colors": importlib.import_module("reportlab.lib.colors"),
@@ -494,18 +504,22 @@ def _load_reportlab() -> dict[str, Any]:
 
 
 def _format_currency(value: Any) -> str:
+    """Formatea un valor como importe monetario en dólares."""
     return f"${float(value or 0.0):,.2f}"
 
 
 def _format_pct(value: Any) -> str:
+    """Formatea un valor numérico como porcentaje legible."""
     return f"{float(value or 0.0):,.2f}%"
 
 
 def _format_number(value: Any, digits: int = 2) -> str:
+    """Formatea un número con la cantidad indicada de decimales."""
     return f"{float(value or 0.0):,.{digits}f}"
 
 
 def _escape(value: str) -> str:
+    """Escapa caracteres reservados antes de insertarlos en párrafos PDF."""
     return (
         str(value)
         .replace("&", "&amp;")
@@ -515,6 +529,7 @@ def _escape(value: str) -> str:
 
 
 def _deduplicate_strings(values: list[str]) -> list[str]:
+    """Elimina avisos repetidos preservando el orden original."""
     seen: set[str] = set()
     unique: list[str] = []
     for value in values:
