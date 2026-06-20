@@ -47,7 +47,7 @@ SEED_USERS: list[dict[str, Any]] = [
         },
     },
     {
-        "name": "Jose Pardo",
+        "name": "José Martínez",
         "email": "jose@example.com",
         "portfolio": {
             "name": "Tech Balanced",

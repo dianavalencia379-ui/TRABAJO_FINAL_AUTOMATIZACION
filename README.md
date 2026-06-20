@@ -258,7 +258,7 @@ informes automatizados trimestrales
    |---------------|---------------------|---------------|------------------------------------|
    | Diana Valencia| diana@example.com   | Crecimiento   | USA AAPL,GOOGL,^ MSFT, AMZN^ NVDA, |
    | Antonio Ruiz  | antonio@example.com | Defensive     | Global JNJ, PG, KO, PEP, V         |
-   |Jose Pardo    | jose@example.com    | Tech Balanced | AAPL,QQQ AMD,^ MSFT,^ META,^       |
+   | Jose Martinez | jose@example.com    | Tech Balanced | AAPL,QQQ AMD,^ MSFT,^ META,^       |
 
 
 **11. Fases de desarrollo**

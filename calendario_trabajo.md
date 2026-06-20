@@ -6,7 +6,7 @@ Este documento detalla la planificación temporal, el reparto de responsabilidad
 
 ## 1. Distribución del Equipo y Roles
 
-Tras la salida de José Luis Martínez Pardo, los roles y responsabilidades individuales del proyecto se han redistribuido entre los 7 integrantes restantes del equipo:
+Tras la salida de Joaquin Gonzalez Garcia, sus funciones han sido asumidas por **José Luis Martínez Pardo**, quedando los roles y responsabilidades del proyecto de la siguiente manera para los 7 integrantes activos:
 
 | Integrante | Rol Principal | Enfoque en el Sprint |
 | :--- | :--- | :--- |
@@ -14,7 +14,7 @@ Tras la salida de José Luis Martínez Pardo, los roles y responsabilidades indi
 | **Antonio Jose Ruiz Jimenez** | **Quant Developer & Lógica Financiera** | Desarrollo y calibración del algoritmo HRP (clustering, bisección de varianza), cálculo de rentabilidades, motor del reequilibrio y alineación del entorno técnico. |
 | **Darío Ruiz Abrante** | **Backend & Testing Developer** | Estructuración del esquema SQLite (seed data), diseño del motor de cartera básico, y desarrollo del suite de pruebas automatizadas en Pytest. |
 | **Jimy Alexander Arias Vasco** | **UI Lead Developer (Streamlit)** | Estructura base de `app.py`, pestañas principales de Resumen y Portfolio, y diseño UX general de la aplicación. |
-| **Joaquin Gonzalez Garcia** | **Interactive UI Developer** | Integración de gráficos dinámicos con Plotly para la visualización de la composición y la evolución histórica del portfolio. |
+| **José Luis Martínez Pardo** | **Interactive UI Developer** | Integración de gráficos dinámicos con Plotly para la visualización de la composición y la evolución histórica del portfolio. |
 | **Johanna Valencia Rozo** | **PDF Report Specialist (ReportLab)** | Implementación de `pdf_generator.py` mediante ReportLab, maquetación del informe financiero apaisado y su sistema de tablas. |
 | **Jhuliana Tuesta Pintado** | **API & Automation Engineer** | Desarrollo del servidor FastAPI (`api.py`), integración de endpoints de descarga e informes, y documentación del flujo con Zapier/Make. |
 
@@ -56,10 +56,10 @@ El sprint de 4 días distribuye los entregables de manera paralela para maximiza
 ### Día 3: Lunes 22 de junio - Interfaz de Usuario, Gráficos y PDF/API
 *   **Fase 7: Interfaz Streamlit**
     *   *Tareas:* Desarrollo de la UI interactiva en `app.py` y archivos de soporte bajo `ui/`. Integración de gráficos dinámicos de Plotly para composición de activos e histórico.
-    *   *Responsables:* Jimy Alexander Arias Vasco (Diseño general y tabs) y Joaquin Gonzalez Garcia (Integración de Plotly y gráficos interactivos).
+    *   *Responsables:* Jimy Alexander Arias Vasco (Diseño general y tabs) y José Luis Martínez Pardo (Integración de Plotly y gráficos interactivos).
 *   **Fase 8: Informes PDF**
     *   *Tareas:* Creación de `reports/pdf_generator.py` para estructurar el reporte apaisado en A4 mediante ReportLab, incluyendo tablas estilizadas y sumario dinámico del advisor.
-    *   *Responsables:* Johanna Valencia Rozo y Joaquin Gonzalez Garcia (Apoyo en diseño).
+    *   *Responsables:* Johanna Valencia Rozo y José Luis Martínez Pardo (Apoyo en diseño).
 *   **Fase 9: API**
     *   *Tareas:* Desarrollo de la API FastAPI en `api.py` para exponer el endpoint `POST /api/report/{user_id}` y montar la carpeta estática para la descarga de PDFs.
     *   *Responsables:* Jhuliana Tuesta Pintado.
@@ -85,7 +85,7 @@ El sprint de 4 días distribuye los entregables de manera paralela para maximiza
 *   **C** (Consulted): Quienes asesoran o aportan código de soporte.
 *   **I** (Informed): Quienes reciben actualizaciones sobre la funcionalidad finalizada.
 
-| Fase / Entregable | Diana V. (Coordinadora) | Antonio R. (Quant) | Darío R. (Backend/QA) | Jimy A. (UI Lead) | Joaquin G. (Plots) | Johanna V. (PDF) | Jhuliana T. (API) |
+| Fase / Entregable | Diana V. (Coordinadora) | Antonio R. (Quant) | Darío R. (Backend/QA) | Jimy A. (UI Lead) | José M. (Plots) | Johanna V. (PDF) | Jhuliana T. (API) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Fase 1: Prep. Entorno** | **A** | **R** | I | I | I | I | I |
 | **Fase 2: Base de Datos** | A | C | **R** | I | I | I | C |
@@ -110,7 +110,7 @@ Para cumplir con las buenas prácticas de Git evaluadas con un 15%:
 2.  **Ramas de características:**
     *   `feature/db-setup` (Darío Ruiz)
     *   `feature/hrp-engine` (Antonio Ruiz)
-    *   `feature/streamlit-ui` (Jimy Arias & Joaquin Gonzalez)
+    *   `feature/streamlit-ui` (Jimy Arias & José Martínez)
     *   `feature/pdf-api` (Johanna Valencia & Jhuliana Tuesta)
     *   `feature/test-suite` (Darío Ruiz)
     *   `feature/docs-memory` (Diana Valencia)
