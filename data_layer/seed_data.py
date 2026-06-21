@@ -67,13 +67,36 @@ SEED_USERS: list[dict[str, Any]] = [
     },
 ]
 def build_seed_payload() -> list[dict[str, Any]]:
-    """Expande usuarios con su histórico mensual precalculado."""
+    """Expande usuarios con su histórico mensual precalculado.
+
+    El histórico generado por generate_fictional_history() se reescala
+    proporcionalmente para que su ÚLTIMO punto coincida exactamente con el
+    valor real de las posiciones (cantidad x precio medio). Antes,
+    'start_value' era un número elegido a mano sin relación con las
+    posiciones reales del usuario, lo que producía una desviación de
+    decenas de miles de dólares entre el histórico y el valor actual del
+    portfolio (ej. Diana: el histórico terminaba en $74,778 mientras sus
+    posiciones reales sumaban $31,337). El reescalado conserva la forma
+    relativa de la serie (estacionalidad, caídas programadas) y solo
+    ajusta la magnitud para que el dashboard sea internamente consistente.
+    """
     payload: list[dict[str, Any]] = []
 
     for user in SEED_USERS:
         portfolio = dict(user["portfolio"])
         history_config = portfolio.pop("history")
-        portfolio["history_records"] = generate_fictional_history(**history_config)
+        positions = portfolio["positions"]
+
+        real_cost_basis = sum(position["quantity"] * position["avg_price"] for position in positions)
+
+        history_records = generate_fictional_history(**history_config)
+        generated_end_value = history_records[-1]["total_value"]
+        scale_factor = (real_cost_basis / generated_end_value) if generated_end_value else 1.0
+
+        for record in history_records:
+            record["total_value"] = round(record["total_value"] * scale_factor, 2)
+
+        portfolio["history_records"] = history_records
         payload.append(
             {
                 "name": user["name"],

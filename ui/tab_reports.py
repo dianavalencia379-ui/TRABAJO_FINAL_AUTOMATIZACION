@@ -34,9 +34,9 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     report_rows = [
         {"Sección": "Usuario", "Valor": selected_user["user_name"]},
         {"Sección": "Email", "Valor": selected_user["user_email"]},
-        {"Sección": "Valor portfolio", "Valor": portfolio_snapshot["portfolio_summary"]["total_current_value"]},
-        {"Sección": "Rentabilidad acumulada (%)", "Valor": evolution_snapshot["metrics"]["cumulative_return_pct"]},
-        {"Sección": "Activos con acción", "Valor": advisor_snapshot["summary"]["increase_count"] + advisor_snapshot["summary"]["reduce_count"]},
+        {"Sección": "Valor portfolio", "Valor": f"${portfolio_snapshot['portfolio_summary']['total_current_value']:,.2f}"},
+        {"Sección": "Rentabilidad acumulada (%)", "Valor": f"{evolution_snapshot['metrics']['cumulative_return_pct']:.2f}%"},
+        {"Sección": "Activos con acción", "Valor": str(advisor_snapshot["summary"]["increase_count"] + advisor_snapshot["summary"]["reduce_count"])},
     ]
     st.dataframe(pd.DataFrame(report_rows), use_container_width=True, hide_index=True)
 
