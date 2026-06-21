@@ -119,11 +119,17 @@ git push origin feature/nombre-de-tu-rama
 
 ---
 
-## 4. Protección y Seguridad de Ramas (Git Hooks)
+## 4. Protección y Seguridad de Ramas (Git Hooks Compartidos)
 
-Para evitar accidentes y escrituras accidentales directas sobre `main`, el proyecto incluye scripts de seguridad (*Git Hooks*) que validan la rama activa antes de permitir commits o envíos locales.
+Para evitar accidentes y escrituras directas sobre `main`, el proyecto incluye scripts de seguridad (*Git Hooks*) bajo el directorio `.githooks/`.
 
-Si intentas hacer commit o push directamente en `main`, la consola mostrará un error controlado y bloqueará la acción:
+> [!IMPORTANT]
+> Los Git Hooks son locales por defecto y no se copian al clonar el repositorio. **Debes activarlos en tu máquina** ejecutando el siguiente comando una sola vez en la terminal:
+> ```bash
+> git config core.hooksPath .githooks
+> ```
+
+Una vez activados, si intentas hacer commit o push directamente sobre la rama `main`, la consola bloqueará la acción mostrando un error controlado:
 ```text
 [ERROR] Commit directo a la rama 'main' prohibido por la política del proyecto. Use una rama 'feature/*'.
 [ERROR] Push directo a la rama 'main' prohibido. Debe integrar mediante Pull Request a 'develop'.
