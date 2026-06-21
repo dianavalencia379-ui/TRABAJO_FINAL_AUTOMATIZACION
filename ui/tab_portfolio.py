@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 
@@ -38,16 +39,39 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     with composition_columns[0]:
         st.subheader("Composición por activo")
         if asset_rows:
-            asset_frame = pd.DataFrame(asset_rows).set_index("label")[["value"]]
-            st.bar_chart(asset_frame)
+            asset_frame = pd.DataFrame(asset_rows)
+            pie_chart = px.pie(
+                asset_frame,
+                names="label",
+                values="value",
+                hole=0.45,
+            )
+            pie_chart.update_traces(textposition="inside", textinfo="percent+label")
+            pie_chart.update_layout(
+                showlegend=True,
+                margin=dict(t=10, b=10, l=10, r=10),
+                legend_title_text="Activo",
+            )
+            st.plotly_chart(pie_chart, use_container_width=True)
         else:
             st.info("Sin composición por activo disponible.")
 
     with composition_columns[1]:
         st.subheader("Valor por portfolio")
         if portfolio_rows:
-            portfolio_frame = pd.DataFrame(portfolio_rows).set_index("label")[["value"]]
-            st.bar_chart(portfolio_frame)
+            portfolio_frame = pd.DataFrame(portfolio_rows)
+            bar_chart = px.bar(
+                portfolio_frame,
+                x="label",
+                y="value",
+                text_auto=".2s",
+            )
+            bar_chart.update_layout(
+                xaxis_title="Portfolio",
+                yaxis_title="Valor ($)",
+                margin=dict(t=10, b=10, l=10, r=10),
+            )
+            st.plotly_chart(bar_chart, use_container_width=True)
         else:
             st.info("Sin composición por portfolio disponible.")
 
@@ -86,4 +110,11 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         ],
         use_container_width=True,
         hide_index=True,
+        column_config={
+            "Precio medio": st.column_config.NumberColumn(format="$%.2f"),
+            "Precio actual": st.column_config.NumberColumn(format="$%.2f"),
+            "Coste": st.column_config.NumberColumn(format="$%.2f"),
+            "Valor actual": st.column_config.NumberColumn(format="$%.2f"),
+            "Peso (%)": st.column_config.NumberColumn(format="%.2f%%"),
+        },
     )
