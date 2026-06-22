@@ -33,13 +33,25 @@ gitGraph
 *   **`develop`**: Rama principal de integración diaria. Aquí convergen las características completadas antes de ser enviadas a `main`.
 
 ### Ramas Temporales (`feature/*`)
-Para cada tarea o fase asignada, el desarrollador trabaja en su propia rama de características partiendo siempre de `develop`:
+Para cada tarea o fase asignada, el desarrollador trabaja en su propia rama de características partiendo siempre de `develop`.  Por ejemplo:
+
 *   `feature/db-setup` (Base de datosSQLite y precargas)
 *   `feature/hrp-engine` (Motor matemático HRP y Yahoo Client)
 *   `feature/streamlit-ui` (Tableros visuales y controles)
 *   `feature/pdf-api` (Endpoints FastAPI y exportación de reportes)
 *   `feature/test-suite` (Baterías de pruebas en Pytest)
 *   `feature/docs-memory` (Redacción y formato de la memoria académica)
+
+O los nombres os parezcan bien. Una vez enviado el el Pull Request y fusionado con Develop, la rama de características remota se elimina para mantener limpio el repositorio. Recordad que es temporal.
+
+Para continuar trabajos, incluso sobre el mismo tema, creais una nueva rama y listo.
+
+1. Creación de rama temporal
+2. Desarrollo y documentación
+3. Commit a la rama temporal
+4. Pull Request y fusión con develop
+5. El administrador borra la rama temporal una vez fusionada con develop
+6. Crear nueva rama para continuar trabajos.
 
 ---
 
@@ -107,11 +119,17 @@ git push origin feature/nombre-de-tu-rama
 
 ---
 
-## 4. Protección y Seguridad de Ramas (Git Hooks)
+## 4. Protección y Seguridad de Ramas (Git Hooks Compartidos)
 
-Para evitar accidentes y escrituras accidentales directas sobre `main`, el proyecto incluye scripts de seguridad (*Git Hooks*) que validan la rama activa antes de permitir commits o envíos locales.
+Para evitar accidentes y escrituras directas sobre `main`, el proyecto incluye scripts de seguridad (*Git Hooks*) bajo el directorio `.githooks/`.
 
-Si intentas hacer commit o push directamente en `main`, la consola mostrará un error controlado y bloqueará la acción:
+> [!IMPORTANT]
+> Los Git Hooks son locales por defecto y no se copian al clonar el repositorio. **Debes activarlos en tu máquina** ejecutando el siguiente comando una sola vez en la terminal:
+> ```bash
+> git config core.hooksPath .githooks
+> ```
+
+Una vez activados, si intentas hacer commit o push directamente sobre la rama `main`, la consola bloqueará la acción mostrando un error controlado:
 ```text
 [ERROR] Commit directo a la rama 'main' prohibido por la política del proyecto. Use una rama 'feature/*'.
 [ERROR] Push directo a la rama 'main' prohibido. Debe integrar mediante Pull Request a 'develop'.
