@@ -144,11 +144,7 @@ La pestaña informes reúne las exportaciones disponibles. Desde ahí se puede d
 
 ## Generación de informes PDF
 
-La generación del PDF está implementada en `reports/pdf_generator.py`. No es un simple archivo adjunto improvisado: reutiliza los snapshots ya calculados por el sistema y construye un informe con secciones concretas sobre usuario, portfolio, composición, evolución, pesos actuales, pesos HRP, tabla de rebalanceo, comentario final y aviso académico.
-
-Esto es importante porque asegura coherencia entre lo que se ve en pantalla, lo que devuelve la API y lo que se entrega en el documento final.
-
-También conviene dejar una nota honesta: la generación real del PDF depende de que ReportLab esté instalado y operativo en el entorno. El proyecto contempla esa posibilidad y, si la librería no está disponible, responde con un mensaje claro en vez de fallar de forma silenciosa.
+La generación del informe en PDF está implementada en reports/pdf_generator.py y reutiliza los snapshots ya calculados por el sistema, lo que garantiza coherencia entre lo que se ve en pantalla, lo que devuelve la API y lo que se entrega en el documento. El informe se estructura en secciones concretas —usuario, portfolio, composición, evolución, pesos actuales, pesos HRP, tabla de rebalanceo, comentario final y aviso académico— y combina contenido tabular con gráficos vectoriales generados por el mismo motor, sin dependencias adicionales: una torta de composición, una línea de evolución del valor y barras que comparan los pesos actuales con los recomendados por HRP. Las tablas son dinámicas en el sentido de que se construyen y formatean según los datos de cada usuario, con resaltado por signo en las métricas relevantes, totales automáticos y un resumen consolidado por portafolio. El módulo está pensado para degradar de forma controlada ante datos incompletos y, como nota honesta, depende de que ReportLab esté instalado y operativo; si no lo está, lo comunica con un mensaje claro en lugar de fallar en silencio.
 
 ## API y automatización documentada
 
