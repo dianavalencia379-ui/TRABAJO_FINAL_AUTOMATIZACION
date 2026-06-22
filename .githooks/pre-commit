@@ -1,0 +1,12 @@
+#!/bin/sh
+# Git hook local para prevenir commits directos en la rama main
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "$branch" = "main" ]; then
+  echo "=========================================================="
+  echo "ERROR: La escritura directa en 'main' esta BLOQUEADA."
+  echo "Por favor, crea una rama (develop o feature/*) y realiza"
+  echo "un Pull Request para integrar tus cambios."
+  echo "=========================================================="
+  exit 1
+fi

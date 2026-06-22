@@ -85,8 +85,17 @@ uv run uvicorn api:app --reload
 
 ---
 
-## Paso 7: Flujo de Trabajo y Política de GitHub
-De acuerdo con el plan del proyecto, se prohíbe subir cambios directamente a la rama `main`. Sigue esta secuencia para añadir tus contribuciones:
+## Paso 7: Activación de Seguridad (Git Hooks) y Flujo de Trabajo
+
+### A. Habilitar la protección local en tu terminal
+Para que el entorno bloquee automáticamente las confirmaciones accidentales directas a `main`, ejecuta este comando en tu terminal (solo se necesita hacer una vez al configurar tu clon local):
+```bash
+git config core.hooksPath .githooks
+```
+*(Esto enlazará el proyecto con los scripts de validación incluidos en la carpeta `.githooks/`)*.
+
+### B. Secuencia del Flujo de Trabajo
+Sigue esta secuencia para añadir tus contribuciones:
 
 1. **Crear tu rama de característica** desde `develop`:
    ```bash
