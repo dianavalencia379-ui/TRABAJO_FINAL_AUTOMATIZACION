@@ -7,6 +7,8 @@ import streamlit as st
 
 from ui.charts import build_area_figure, build_donut_figure, build_waterfall_figure
 
+from reports.resumen_pdf_generator import ResumenReportError, generate_resumen_pdf, is_resumen_pdf_available
+
 
 _MONTH_ABBR = {
     "01": "enero", "02": "febrero", "03": "marzo", "04": "abril",
@@ -94,8 +96,9 @@ def _inject_styles() -> None:
     st.markdown(
         """
         <style>
-        [data-testid="stCaptionContainer"] { font-size: 15px !important; }
-        [data-testid="stDataFrame"] * { font-size: 14.5px !important; }
+        [data-testid="stMarkdownContainer"] { font-size: 16.5px !important; }
+        [data-testid="stDataFrame"] * { font-size: 15.5px !important; }
+        h3 { font-size: 26px !important; }
         </style>
         """,
         unsafe_allow_html=True,
@@ -112,16 +115,21 @@ def _kpi_card_html(icon: str, label: str, value: str, delta: str | None = None) 
     """
     delta_text = delta if delta else "&nbsp;"
     return f"""
-    <div style="border:1px solid #e5e7eb;border-radius:14px;padding:16px 18px;
-                display:flex;align-items:center;gap:14px;background:#ffffff;
-                min-height:92px;box-shadow:0 1px 2px rgba(0,0,0,0.04);">
-      <div style="width:50px;height:50px;min-width:50px;border-radius:50%;
-                  background:#eff6ff;display:flex;align-items:center;
-                  justify-content:center;font-size:24px;">{icon}</div>
+    <div style="position:relative;border:1px solid #c9ced5;border-radius:14px;;box-shadow:0 1px 3px rgba(0,0,0,0.07);border-radius:14px;
+                padding:18px 20px 18px 56px;background:transparent;
+                min-height:110px;">
+      <div style="position:absolute;left:0;top:50%;transform:translate(-50%,-50%);
+                  width:76px;height:76px;border-radius:50%;
+                  border:2px dashed #93c5fd;display:flex;align-items:center;
+                  justify-content:center;background:#f4f5f7;">
+        <div style="width:52px;height:52px;border-radius:50%;background:#eff6ff;
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:28px;">{icon}</div>
+      </div>
       <div style="overflow:hidden;">
-        <div style="font-size:14px;color:#6b7280;font-weight:600;">{label}</div>
-        <div style="font-size:23px;font-weight:700;color:#111827;line-height:1.3;">{value}</div>
-        <div style="font-size:12.5px;color:#9ca3af;">{delta_text}</div>
+        <div style="font-size:17px;color:#6b7280;font-weight:600;">{label}</div>
+        <div style="font-size:25px;font-weight:700;color:#111827;line-height:1.3;">{value}</div>
+        <div style="font-size:13.5px;color:#9ca3af;">{delta_text}</div>
       </div>
     </div>
     """
@@ -202,14 +210,14 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     # ============================================================
     # Tarjetas KPI -- dos filas de 3, misma distribución
     # ============================================================
-    row1 = st.columns(3)
+    row1 = st.columns(3, gap="large")
     _kpi_card(row1[0], "💰", "Valor Portafolio al Cierre", f"${summary['total_current_value']:,.2f}")
     _kpi_card(row1[1], "🛒", "Compras Activas", str(int(summary["position_count"])))
     _kpi_card(row1[2], "📁", "Portafolios Activos", str(int(summary["portfolio_count"])))
 
     st.write("")
 
-    row2 = st.columns(3)
+    row2 = st.columns(3, gap="large")
     _kpi_card(row2[0], "📈", "Rentabilidad 12 meses", f"{return_12m:.2f}%")
     _kpi_card(row2[1], "🏆", "Mejor Periodo 12m", f"{window['best_period_pct']:.2f}%", delta=window["best_period_label"])
     _kpi_card(row2[2], "🔻", "Peor Periodo 12m", f"{window['worst_period_pct']:.2f}%", delta=window["worst_period_label"])
@@ -236,7 +244,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     total_to_reallocate = sum(item["value_delta"] for item in advisor_table if item.get("action") == "increase")
     net_check = advisor_summary.get("net_value_delta", 0.0)
 
-    row3 = st.columns(4)
+    row3 = st.columns(4, gap="large")
     _kpi_card(row3[0], "🟢", "Aumentar", str(int(advisor_summary["increase_count"])))
     _kpi_card(row3[1], "🔴", "Reducir", str(int(advisor_summary["reduce_count"])))
     _kpi_card(row3[2], "⚪", "Mantener", str(int(advisor_summary.get("hold_count", 0))))
@@ -366,3 +374,64 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         st.markdown(f"**🎯 Pesos objetivo HRP:** {advisor_summary['asset_count']} activos")
         price_source = hrp_snapshot.get("diagnostics", {}).get("price_source", "n/d")
         st.markdown(f"**🔗 Origen de precios HRP:** {price_source}")
+
+        st.divider()
+
+    st.divider()
+
+    # ============================================================
+    # Descargar informe PDF (acotado a esta pestaña)
+    # ============================================================
+    st.subheader("📄 Descargar informe")
+    pdf_available, pdf_message = is_resumen_pdf_available()
+    pdf_state_key = f"resumen_pdf_report::{selected_user['user_email']}"
+
+    pdf_columns = st.columns((1.2, 1.8))
+    with pdf_columns[0]:
+        if pdf_available:
+            if st.button("Preparar informe PDF", key="resumen_preparar_pdf"):
+                portfolios = dashboard_data.get("user_portfolios", [])
+                portfolio_name = portfolios[0]["portfolio_name"] if portfolios else "Portafolio sin nombre"
+                resumen_data = {
+                    "portfolio_name": portfolio_name,
+                    "periodo": periodo,
+                    "kpis": [
+                        ("Valor Portafolio al Cierre", f"${summary['total_current_value']:,.2f}"),
+                        ("Compras Activas", str(int(summary["position_count"]))),
+                        ("Portafolios Activos", str(int(summary["portfolio_count"]))),
+                        ("Rentabilidad 12 meses", f"{return_12m:.2f}%"),
+                        ("Mejor Periodo 12m", f"{window['best_period_pct']:.2f}% ({window['best_period_label']})"),
+                        ("Peor Periodo 12m", f"{window['worst_period_pct']:.2f}% ({window['worst_period_label']})"),
+                    ],
+                    "horizon_rows": horizon_rows,
+                    "rebalance_summary": {
+                        "increase_count": advisor_summary["increase_count"],
+                        "reduce_count": advisor_summary["reduce_count"],
+                        "hold_count": advisor_summary.get("hold_count", 0),
+                        "total_to_reallocate": total_to_reallocate,
+                    },
+                    "composition": asset_rows,
+                }
+                try:
+                    report = generate_resumen_pdf(resumen_data=resumen_data)
+                except ResumenReportError as exc:
+                    st.session_state.pop(pdf_state_key, None)
+                    st.error(str(exc))
+                else:
+                    st.session_state[pdf_state_key] = report
+                    st.success("Informe PDF listo para descargar.")
+        else:
+            st.warning(pdf_message or "La generación PDF no está disponible en este entorno.")
+
+    with pdf_columns[1]:
+        cached_report = st.session_state.get(pdf_state_key)
+        if cached_report:
+            st.download_button(
+                label="Descargar informe PDF",
+                data=cached_report.content,
+                file_name=cached_report.file_name,
+                mime="application/pdf",
+                key="resumen_descargar_pdf",
+            )
+        elif pdf_available:
+            st.info("Prepara el informe para habilitar la descarga PDF.")

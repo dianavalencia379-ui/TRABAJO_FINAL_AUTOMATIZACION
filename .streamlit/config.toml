@@ -1,0 +1,5 @@
+[theme]
+baseFontSize = 18
+backgroundColor = "#f4f5f7"
+dataframeBorderColor = "#cdd3da"
+dataframeHeaderBackgroundColor = "#eceef1"

@@ -40,24 +40,28 @@ def build_waterfall_figure(
     """
     saldo_final = saldo_inicial + aportes + rendimientos - retiros - gastos
 
-    # Forma fija del diagrama (6 puntos de referencia, sin relación con
-    # los montos reales): plano -> sube -> pico -> valle -> se nivela -> plano
-    x_points = np.array([0, 1, 2, 3, 4, 5])
-    y_points = np.array([0.0, 0.55, 1.0, -1.0, 0.0, 0.0])
+    # Forma fija y SIMÉTRICA del diagrama (sin relación con los montos
+    # reales): tramo plano -> sube (campana) -> pico -> baja (campana
+    # espejo) -> valle -> sube a nivel -> tramo plano. El ancho y la
+    # altura de la subida y la bajada son iguales a propósito.
+    x_points = np.array([0, 0.75, 2.25, 3.75, 5.25, 6])
+    y_points = np.array([0.0, 0.0, 1.0, -1.0, 0.0, 0.0])
 
-    x_smooth = np.linspace(0, 5, 360)
+    x_smooth = np.linspace(0, 6, 400)
     interpolator = PchipInterpolator(x_points, y_points)
     y_smooth = interpolator(x_smooth)
 
     fig = Figure(figsize=(11.5, 4.6))
     ax = fig.add_subplot(111)
+    fig.patch.set_alpha(0.0)
+    ax.patch.set_alpha(0.0)
     ax.plot(x_smooth, y_smooth, color="#9aa5b1", linewidth=2.6, zorder=1)
 
     ax.scatter([0], [0.0], s=170, facecolors="white", edgecolors="#1d4ed8", linewidths=2.6, zorder=3)
-    ax.scatter([5], [0.0], s=170, facecolors="white", edgecolors="#1d4ed8", linewidths=2.6, zorder=3)
-    ax.scatter([2], [1.0], s=130, color="#16a34a", zorder=3)
-    ax.scatter([3], [-1.0], s=130, color="#dc2626", zorder=3)
-    ax.scatter([4], [0.0], s=110, color="#9ca3af", zorder=3)
+    ax.scatter([6], [0.0], s=170, facecolors="white", edgecolors="#1d4ed8", linewidths=2.6, zorder=3)
+    ax.scatter([2.25], [1.0], s=130, color="#16a34a", zorder=3)
+    ax.scatter([3.75], [-1.0], s=130, color="#dc2626", zorder=3)
+    ax.scatter([5.25], [0.0], s=110, color="#9ca3af", zorder=3)
 
     def _money(value: float) -> str:
         """Formatea evitando el caso '-$0' (Python conserva el signo de -0.0)."""
@@ -65,10 +69,10 @@ def build_waterfall_figure(
         return f"${normalized:,.0f}" if normalized == 0 else f"${normalized:+,.0f}"
 
     label_kwargs = dict(ha="center", fontsize=11, color="#374151")
-    ax.annotate(f"Aportes\n{_money(aportes)}", xy=(1, 0.7), **label_kwargs)
-    ax.annotate(f"Rendimientos\n{_money(rendimientos)}", xy=(2.6, 1.32), **label_kwargs)
-    ax.annotate(f"Retiros\n{_money(-retiros)}", xy=(2.4, -1.32), **label_kwargs)
-    ax.annotate(f"Gastos y comisiones\n{_money(-gastos)}", xy=(4, -0.62), **label_kwargs)
+    ax.annotate(f"Aportes\n{_money(aportes)}", xy=(1.2, 0.55), **label_kwargs)
+    ax.annotate(f"Rendimientos\n{_money(rendimientos)}", xy=(2.8, 1.32), **label_kwargs)
+    ax.annotate(f"Retiros\n{_money(-retiros)}", xy=(2.7, -1.32), **label_kwargs)
+    ax.annotate(f"Gastos y comisiones\n{_money(-gastos)}", xy=(4.6, -0.62), **label_kwargs)
 
     ax.annotate(
         f"Saldo inicial\n${saldo_inicial:,.0f}\n{start_label}",
@@ -77,12 +81,12 @@ def build_waterfall_figure(
     )
     ax.annotate(
         f"Saldo final\n${saldo_final:,.0f}\n{end_label}",
-        xy=(5, 0), xytext=(5, 0.55),
+        xy=(6, 0), xytext=(6, 0.55),
         ha="center", fontsize=11.5, color="#1d4ed8", fontweight="bold",
         bbox=dict(boxstyle="round,pad=0.4", fc="#fef9c3", ec="#eab308", lw=1.2),
     )
 
-    ax.set_xlim(-0.7, 5.7)
+    ax.set_xlim(-0.8, 6.8)
     ax.set_ylim(-1.9, 1.9)
     ax.axis("off")
     fig.tight_layout()
@@ -105,6 +109,9 @@ def build_donut_figure(*, labels: list[str], values: list[float], amounts: list[
     """
     fig = Figure(figsize=(8.0, 4.6))
     ax = fig.add_subplot(111)
+    fig.patch.set_alpha(0.0)
+    ax.patch.set_alpha(0.0)
+
 
     if not values or sum(values) <= 0:
         ax.text(0.5, 0.5, "Sin datos de composición", ha="center", va="center", fontsize=12, color="#6b7280")
@@ -127,6 +134,7 @@ def build_donut_figure(*, labels: list[str], values: list[float], amounts: list[
     )
 
     # Solo las porciones reales (se descarta la última, invisible)
+    wedges[-1].set_edgecolor("none")
     real_wedges = wedges[: len(values)]
     for index, (wedge, ticker, weight_pct, amount) in enumerate(zip(real_wedges, labels, values, amounts)):
         angle_rad = np.deg2rad((wedge.theta1 + wedge.theta2) / 2)
@@ -162,6 +170,8 @@ def build_area_figure(*, dates: list[str], values: list[float]) -> Figure:
     """
     fig = Figure(figsize=(8.2, 4.3))
     ax = fig.add_subplot(111)
+    fig.patch.set_alpha(0.0)
+    ax.patch.set_alpha(0.0)
 
     x_positions = list(range(len(values)))
     ax.fill_between(x_positions, values, color="#bfdbfe", alpha=0.65, zorder=1)
