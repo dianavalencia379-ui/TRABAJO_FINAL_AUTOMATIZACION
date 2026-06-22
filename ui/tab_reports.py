@@ -38,7 +38,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         {"Sección": "Rentabilidad acumulada (%)", "Valor": f"{evolution_snapshot['metrics']['cumulative_return_pct']:.2f}%"},
         {"Sección": "Activos con acción", "Valor": str(advisor_snapshot["summary"]["increase_count"] + advisor_snapshot["summary"]["reduce_count"])},
     ]
-    st.dataframe(pd.DataFrame(report_rows), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(report_rows), width="stretch", hide_index=True)
 
     st.caption("El informe PDF reutiliza los snapshots de portfolio, evolución, HRP y rebalanceo por usuario.")
 
@@ -76,7 +76,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
 
     with action_columns[0]:
         if pdf_available:
-            if st.button("Preparar informe PDF", use_container_width=True):
+            if st.button("Preparar informe PDF", width="stretch"):
                 try:
                     report = generate_user_report_pdf(
                         selected_user=selected_user,
@@ -99,7 +99,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
                 data=cached_report.content,
                 file_name=cached_report.file_name,
                 mime="application/pdf",
-                use_container_width=True,
+                width="stretch",
             )
             st.caption(
                 f"Generado: {cached_report.generated_at} · Secciones incluidas: {len(cached_report.sections)}"

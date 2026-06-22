@@ -52,4 +52,4 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
             "is_new_peak": "Nuevo máximo",
         }
     )
-    st.dataframe(detail_frame, use_container_width=True, hide_index=True)
+    st.dataframe(detail_frame, width="stretch", hide_index=True)

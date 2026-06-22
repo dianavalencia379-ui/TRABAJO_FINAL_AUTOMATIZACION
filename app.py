@@ -177,7 +177,7 @@ def main() -> None:
                 },
             ]
         )
-        st.dataframe(summary_frame, use_container_width=True, hide_index=True)
+        st.dataframe(summary_frame, width="stretch", hide_index=True)
 
     tab_labels = ["Resumen", "Portfolio", "Advisor", "Evolución", "Informes"]
     overview_tab, portfolio_tab, advisor_tab, evolution_tab, reports_tab = st.tabs(tab_labels)

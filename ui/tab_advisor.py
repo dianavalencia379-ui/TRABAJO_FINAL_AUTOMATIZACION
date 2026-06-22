@@ -70,7 +70,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
                     "Acción",
                 ]
             ],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     else:
@@ -78,10 +78,10 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
 
     with st.expander("Diagnóstico HRP"):
         diagnostics_rows = [
-            {"Indicador": "Histórico utilizado", "Valor": diagnostics.get("history_rows", 0)},
+            {"Indicador": "Histórico utilizado", "Valor": str(diagnostics.get("history_rows", 0))},
             {"Indicador": "Periodo precios", "Valor": f"{diagnostics.get('history_start', 'n/d')} → {diagnostics.get('history_end', 'n/d')}"},
-            {"Indicador": "Filas de retornos", "Valor": diagnostics.get("returns_rows", 0)},
-            {"Indicador": "Suma pesos actual", "Valor": diagnostics.get("weights_sum", {}).get("current", 0)},
-            {"Indicador": "Suma pesos objetivo", "Valor": diagnostics.get("weights_sum", {}).get("recommended", 0)},
+            {"Indicador": "Filas de retornos", "Valor": str(diagnostics.get("returns_rows", 0))},
+            {"Indicador": "Suma pesos actual", "Valor": f"{diagnostics.get('weights_sum', {}).get('current', 0):.4f}"},
+            {"Indicador": "Suma pesos objetivo", "Valor": f"{diagnostics.get('weights_sum', {}).get('recommended', 0):.4f}"},
         ]
-        st.dataframe(pd.DataFrame(diagnostics_rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(diagnostics_rows), width="stretch", hide_index=True)
