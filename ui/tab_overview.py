@@ -1,3 +1,9 @@
+# ============================================================
+# ui/tab_overview.py — Pestaña Resumen ejecutivo
+# Muestra el resumen financiero completo del usuario:
+# KPIs, evolución, composición, rebalanceo y descarga PDF.
+# ============================================================
+
 from __future__ import annotations
 
 from typing import Any
@@ -6,23 +12,27 @@ import pandas as pd
 import streamlit as st
 
 from ui.charts import build_area_figure, build_donut_figure, build_waterfall_figure
-
 from reports.resumen_pdf_generator import ResumenReportError, generate_resumen_pdf, is_resumen_pdf_available
 
 
+# Mapeo de números de mes a nombres completos en español
+# (se usan nombres completos para evitar que el traductor del navegador
+# confunda abreviaturas como 'ago' con la palabra inglesa 'ago')
 _MONTH_ABBR = {
-    "01": "enero", "02": "febrero", "03": "marzo", "04": "abril",
-    "05": "mayo", "06": "junio", "07": "julio", "08": "agosto",
+    "01": "enero",   "02": "febrero",  "03": "marzo",    "04": "abril",
+    "05": "mayo",    "06": "junio",    "07": "julio",    "08": "agosto",
     "09": "septiembre", "10": "octubre", "11": "noviembre", "12": "diciembre",
 }
 
 
-def _format_month(date_str: str | None) -> str:
-    """Convierte 'YYYY-MM-DD' en una etiqueta tipo 'agosto 2025'.
+# ------------------------------------------------------------
+# Funciones auxiliares
+# ------------------------------------------------------------
 
-    Se usan nombres completos (no abreviaturas) a propósito: la abreviatura
-    'ago' (agosto) coincidía con la palabra inglesa 'ago' y el traductor
-    automático del navegador la reemplazaba por 'año' en pantalla.
+def _format_month(date_str: str | None) -> str:
+    """
+    Convierte 'YYYY-MM-DD' en una etiqueta tipo 'agosto 2025'.
+    Retorna 'n/d' si la cadena es inválida o vacía.
     """
     if not date_str or len(date_str) < 7:
         return "n/d"
@@ -31,8 +41,10 @@ def _format_month(date_str: str | None) -> str:
 
 
 def _windowed_return_pct(series: list[dict[str, Any]], window: int) -> float:
-    """Rentabilidad porcentual entre el inicio y el fin de una ventana de
-    `window` meses (los últimos `window` puntos de la serie)."""
+    """
+    Calcula la rentabilidad porcentual entre el primer y último punto
+    de una ventana de `window` meses (los últimos `window` puntos).
+    """
     if not series:
         return 0.0
     ordered = sorted(series, key=lambda point: point.get("date", ""))
@@ -45,10 +57,11 @@ def _windowed_return_pct(series: list[dict[str, Any]], window: int) -> float:
 
 
 def _windowed_metrics(series: list[dict[str, Any]], window: int = 12) -> dict[str, Any]:
-    """Drawdown y mejor/peor periodo limitados a los últimos `window` meses.
+    """
+    Calcula drawdown y mejor/peor periodo limitados a los últimos `window` meses.
 
-    El drawdown se recalcula usando solo el pico DENTRO de la ventana, no
-    el drawdown_pct ya calculado contra el máximo de TODO el histórico.
+    El drawdown se recalcula usando solo el pico DENTRO de la ventana,
+    no el drawdown_pct calculado contra el máximo de todo el histórico.
     """
     empty_result = {
         "worst_drawdown_pct": 0.0, "worst_drawdown_label": "n/d",
@@ -63,6 +76,7 @@ def _windowed_metrics(series: list[dict[str, Any]], window: int = 12) -> dict[st
     if not windowed:
         return empty_result
 
+    # Calcular drawdown máximo dentro de la ventana
     running_peak = float(windowed[0].get("total_value", 0.0))
     worst_drawdown_pct = 0.0
     worst_drawdown_date = windowed[0].get("date")
@@ -74,6 +88,7 @@ def _windowed_metrics(series: list[dict[str, Any]], window: int = 12) -> dict[st
             worst_drawdown_pct = drawdown
             worst_drawdown_date = point.get("date")
 
+    # Identificar mejor y peor periodo dentro de la ventana
     best_point = max(windowed, key=lambda point: point.get("period_return_pct", 0.0))
     worst_point = min(windowed, key=lambda point: point.get("period_return_pct", 0.0))
 
@@ -88,10 +103,9 @@ def _windowed_metrics(series: list[dict[str, Any]], window: int = 12) -> dict[st
 
 
 def _inject_styles() -> None:
-    """Aumenta el tamaño de letra de texto auxiliar (notas, tablas) dentro
-    de esta pestaña. No toca colores ni fondos -- eso se mantiene acotado a
-    las figuras de matplotlib (ver ui/charts.py), por decisión explícita
-    de no alterar el tema visual del resto de la aplicación.
+    """
+    Aumenta el tamaño de letra de texto auxiliar dentro de esta pestaña.
+    No toca colores ni fondos (eso queda en ui/charts.py).
     """
     st.markdown(
         """
@@ -106,16 +120,15 @@ def _inject_styles() -> None:
 
 
 def _kpi_card_html(icon: str, label: str, value: str, delta: str | None = None) -> str:
-    """HTML de una tarjeta KPI con ícono grande y altura fija.
-
-    Se construye a mano (en vez de st.metric) porque st.metric no permite
-    controlar el tamaño del ícono/texto ni garantizar la misma altura entre
-    tarjetas con y sin texto secundario -- ambas cosas se pidieron
-    explícitamente (tarjetas más grandes, misma altura entre filas).
+    """
+    Genera el HTML de una tarjeta KPI con ícono grande y altura fija.
+    Se construye manualmente (en vez de st.metric) para controlar
+    el tamaño del ícono/texto y garantizar la misma altura entre tarjetas.
     """
     delta_text = delta if delta else "&nbsp;"
     return f"""
-    <div style="position:relative;border:1px solid #c9ced5;border-radius:14px;;box-shadow:0 1px 3px rgba(0,0,0,0.07);border-radius:14px;
+    <div style="position:relative;border:1px solid #c9ced5;border-radius:14px;
+                box-shadow:0 1px 3px rgba(0,0,0,0.07);
                 padding:18px 20px 18px 56px;background:transparent;
                 min-height:110px;">
       <div style="position:absolute;left:0;top:50%;transform:translate(-50%,-50%);
@@ -136,18 +149,37 @@ def _kpi_card_html(icon: str, label: str, value: str, delta: str | None = None) 
 
 
 def _kpi_card(column, icon: str, label: str, value: str, *, delta: str | None = None) -> None:
+    """Renderiza una tarjeta KPI dentro de la columna indicada."""
     with column:
         st.markdown(_kpi_card_html(icon, label, value, delta), unsafe_allow_html=True)
 
 
+# ------------------------------------------------------------
+# Función principal de renderizado
+# ------------------------------------------------------------
+
 def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, Any]) -> None:
-    """Muestra el resumen ejecutivo del usuario seleccionado."""
+    """
+    Renderiza el resumen ejecutivo completo del usuario seleccionado.
+
+    Secciones:
+      1. Diagrama de movimiento del periodo (cascada)
+      2. Alerta de riesgo según drawdown actual
+      3. Tarjetas KPI (valor, posiciones, rentabilidad)
+      4. Tabla de rendimiento por horizonte
+      5. Recomendación de rebalanceo HRP
+      6. Gráficos de evolución y composición
+      7. Tabla detallada de posiciones enriquecida
+      8. Estado general del usuario
+      9. Descarga de informe PDF
+    """
     if not selected_user:
         st.info("Selecciona un usuario para ver el resumen financiero.")
         return
 
     _inject_styles()
 
+    # Extraer datos de todos los snapshots necesarios
     portfolio_snapshot = dashboard_data["portfolio_snapshot"]
     evolution_snapshot = dashboard_data["evolution_snapshot"]
     advisor_snapshot = dashboard_data["advisor_snapshot"]
@@ -158,19 +190,22 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     advisor_table = advisor_snapshot.get("advisor_table", [])
     series = evolution_snapshot.get("series", [])
 
+    # Calcular métricas de ventana de 12 meses
     window = _windowed_metrics(series, window=12)
     return_12m = _windowed_return_pct(series, window=12)
 
     # ============================================================
-    # Movimiento del Periodo (diagrama esquemático, no escalado)
+    # Sección 1: Movimiento del Periodo (cascada esquemática)
     # ============================================================
     st.subheader("📊 Movimiento del Periodo")
     if series:
         ordered = sorted(series, key=lambda point: point.get("date", ""))
         period_points = ordered[-12:] if len(ordered) > 12 else ordered
+
         saldo_inicial = float(period_points[0]["total_value"])
         saldo_final = float(period_points[-1]["total_value"])
-        rendimientos = saldo_final - saldo_inicial  # aportes=retiros=gastos=0 hoy
+        # Diferencia total: aportes=retiros=gastos=0 en este modelo
+        rendimientos = saldo_final - saldo_inicial
 
         fig = build_waterfall_figure(
             saldo_inicial=saldo_inicial,
@@ -190,25 +225,34 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         st.info("No hay histórico disponible para construir el movimiento del periodo.")
 
     # ============================================================
-    # Alerta de riesgo
+    # Sección 2: Alerta de riesgo según drawdown actual
     # ============================================================
     latest_drawdown = float(metrics.get("latest_drawdown_pct", 0.0))
     max_drawdown = float(metrics.get("max_drawdown_pct", 0.0))
 
     if latest_drawdown >= -0.01:
-        st.success(f"🎉 La cartera está en (o muy cerca de) su máximo histórico · drawdown actual: {latest_drawdown:.2f}%")
+        # Portfolio en máximo histórico
+        st.success(
+            f"🎉 La cartera está en (o muy cerca de) su máximo histórico · "
+            f"drawdown actual: {latest_drawdown:.2f}%"
+        )
     elif max_drawdown < 0 and abs(latest_drawdown) >= abs(max_drawdown) * 0.9:
+        # Portfolio cerca de su peor caída histórica
         st.warning(
             f"⚠️ La cartera está cerca de su peor caída histórica registrada "
             f"· drawdown actual: {latest_drawdown:.2f}% (máxima caída: {max_drawdown:.2f}%)"
         )
     else:
-        st.info(f"La cartera tiene un drawdown actual de {latest_drawdown:.2f}%, dentro de su rango histórico normal.")
+        # Drawdown dentro del rango normal
+        st.info(
+            f"La cartera tiene un drawdown actual de {latest_drawdown:.2f}%, "
+            f"dentro de su rango histórico normal."
+        )
 
     st.divider()
 
     # ============================================================
-    # Tarjetas KPI -- dos filas de 3, misma distribución
+    # Sección 3: Tarjetas KPI — dos filas de 3
     # ============================================================
     row1 = st.columns(3, gap="large")
     _kpi_card(row1[0], "💰", "Valor Portafolio al Cierre", f"${summary['total_current_value']:,.2f}")
@@ -225,30 +269,45 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     st.write("")
 
     # ============================================================
-    # Tabla de rendimiento bruto y neto por horizonte
+    # Sección 4: Rendimiento bruto y neto por horizonte
     # ============================================================
     st.subheader("📋 Rendimiento bruto y neto por horizonte")
     horizon_rows = []
     for label, window_size in (("Mes actual", 1), ("Últimos 3 meses", 3), ("Últimos 12 meses", 12)):
         bruto = _windowed_return_pct(series, window_size)
-        horizon_rows.append({"Periodo": label, "Rendimiento Bruto": f"{bruto:.2f}%", "Rendimiento Neto": f"{bruto:.2f}%"})
+        horizon_rows.append({
+            "Periodo": label,
+            "Rendimiento Bruto": f"{bruto:.2f}%",
+            "Rendimiento Neto": f"{bruto:.2f}%",  # Coinciden porque no hay gastos registrados aún
+        })
     st.dataframe(pd.DataFrame(horizon_rows), width="stretch", hide_index=True)
-    st.markdown("El bruto y el neto coinciden porque el proyecto aún no registra gastos de transacción. La tabla queda lista para cuando ese dato exista.")
+    st.markdown(
+        "El bruto y el neto coinciden porque el proyecto aún no registra gastos de transacción. "
+        "La tabla queda lista para cuando ese dato exista."
+    )
 
     st.divider()
 
     # ============================================================
-    # Recomendación para Rebalanceo
+    # Sección 5: Recomendación de rebalanceo HRP
     # ============================================================
     st.subheader("🎯 Recomendación para Rebalanceo")
-    total_to_reallocate = sum(item["value_delta"] for item in advisor_table if item.get("action") == "increase")
+
+    # Capital total que se movería hacia activos infraponderados
+    total_to_reallocate = sum(
+        item["value_delta"] for item in advisor_table
+        if item.get("action") == "increase"
+    )
     net_check = advisor_summary.get("net_value_delta", 0.0)
 
     row3 = st.columns(4, gap="large")
     _kpi_card(row3[0], "🟢", "Aumentar", str(int(advisor_summary["increase_count"])))
     _kpi_card(row3[1], "🔴", "Reducir", str(int(advisor_summary["reduce_count"])))
     _kpi_card(row3[2], "⚪", "Mantener", str(int(advisor_summary.get("hold_count", 0))))
-    _kpi_card(row3[3], "💱", "Capital a Reasignar", f"${total_to_reallocate:,.2f}", delta=f"verificación ≈ $0: {net_check:,.2f}")
+    _kpi_card(
+        row3[3], "💱", "Capital a Reasignar", f"${total_to_reallocate:,.2f}",
+        delta=f"verificación ≈ $0: {net_check:,.2f}"
+    )
 
     st.markdown(
         "Activos por debajo del peso recomendado por el modelo HRP se marcan para **aumentar**; "
@@ -259,7 +318,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     st.divider()
 
     # ============================================================
-    # Evolución (histórico completo) + Composición (anillo)
+    # Sección 6: Evolución histórica + Composición por activo
     # ============================================================
     left_column, right_column = st.columns((1.3, 1.0))
 
@@ -288,27 +347,34 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         else:
             st.info("Sin composición disponible.")
 
-    st.markdown("Histórico completo arriba a la izquierda. Las métricas de mejor/peor periodo de las tarjetas están limitadas a los últimos 12 meses.")
+    st.markdown(
+        "Histórico completo arriba a la izquierda. Las métricas de mejor/peor periodo "
+        "de las tarjetas están limitadas a los últimos 12 meses."
+    )
 
     st.divider()
 
     # ============================================================
-    # Detalle de posiciones, enriquecido con HRP + correlación + totales
+    # Sección 7: Tabla detallada de posiciones enriquecida con HRP
     # ============================================================
     st.subheader("📌 Detalle de posiciones")
     positions = portfolio_snapshot.get("positions_table", [])
+
     if not positions:
         st.info("No hay posiciones para mostrar.")
     else:
+        # Emojis de acción para visualización rápida
         action_emoji = {"increase": "🟢", "reduce": "🔴", "hold": "⚪"}
         advisor_by_ticker = {item["ticker"]: item for item in advisor_table}
 
+        # Calcular correlación promedio de cada ticker con el resto del portfolio
         correlation_matrix = hrp_snapshot.get("matrices", {}).get("correlation", {})
         avg_correlation_by_ticker: dict[str, float] = {}
         for ticker, row in correlation_matrix.items():
             others = [value for other_ticker, value in row.items() if other_ticker != ticker]
             avg_correlation_by_ticker[ticker] = (sum(others) / len(others)) if others else 0.0
 
+        # Construir filas enriquecidas combinando portfolio + advisor + correlación
         enriched_rows = []
         for position in positions:
             ticker = position["ticker"]
@@ -325,9 +391,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
                     "Valor actual": position["current_value"],
                     "Peso (%)": position["weight_pct"],
                     "Peso objetivo HRP (%)": advisor_item.get("target_weight_pct"),
-                    # Texto preformateado (no NumberColumn): así la fila TOTAL puede
-                    # dejar la celda realmente vacía -- con NumberColumn, un NaN se
-                    # muestra como el texto literal "None" en esta versión de Streamlit.
+                    # Texto preformateado para que la fila TOTAL pueda quedar vacía
                     "Diferencia vs HRP (pp)": f"{difference_pct:+.2f}" if difference_pct is not None else "",
                     "Correlación promedio": f"{avg_correlation:.3f}" if avg_correlation is not None else "",
                 }
@@ -335,6 +399,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
 
         positions_frame = pd.DataFrame(enriched_rows)
 
+        # Agregar fila de totales al final de la tabla
         totals_row: dict[str, Any] = {
             "Portfolio": "", "Ticker": "TOTAL", "Activo": "", "Acción HRP": "",
             "Valor actual": positions_frame["Valor actual"].sum(),
@@ -343,7 +408,10 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
             "Diferencia vs HRP (pp)": "",
             "Correlación promedio": "",
         }
-        display_frame = pd.concat([positions_frame, pd.DataFrame([totals_row])], ignore_index=True)
+        display_frame = pd.concat(
+            [positions_frame, pd.DataFrame([totals_row])],
+            ignore_index=True
+        )
 
         st.dataframe(
             display_frame,
@@ -359,7 +427,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     st.divider()
 
     # ============================================================
-    # Estado general
+    # Sección 8: Estado general del usuario
     # ============================================================
     st.subheader("ℹ️ Estado general")
     info_left, info_right = st.columns(2)
@@ -367,7 +435,10 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     with info_left:
         st.markdown(f"**👤 Usuario:** {selected_user['user_name']}")
         st.markdown(f"**📧 Email:** {selected_user['user_email']}")
-        periodo = f"{metrics['start_date']} → {metrics['end_date']}" if metrics["points"] else "Sin histórico"
+        periodo = (
+            f"{metrics['start_date']} → {metrics['end_date']}"
+            if metrics["points"] else "Sin histórico"
+        )
         st.markdown(f"**📅 Periodo analizado:** {periodo}")
 
     with info_right:
@@ -375,15 +446,15 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         price_source = hrp_snapshot.get("diagnostics", {}).get("price_source", "n/d")
         st.markdown(f"**🔗 Origen de precios HRP:** {price_source}")
 
-        st.divider()
-
     st.divider()
 
     # ============================================================
-    # Descargar informe PDF (acotado a esta pestaña)
+    # Sección 9: Descarga de informe PDF
     # ============================================================
     st.subheader("📄 Descargar informe")
     pdf_available, pdf_message = is_resumen_pdf_available()
+
+    # Clave única en session_state para cachear el PDF por usuario
     pdf_state_key = f"resumen_pdf_report::{selected_user['user_email']}"
 
     pdf_columns = st.columns((1.2, 1.8))
@@ -391,7 +462,10 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         if pdf_available:
             if st.button("Preparar informe PDF", key="resumen_preparar_pdf"):
                 portfolios = dashboard_data.get("user_portfolios", [])
-                portfolio_name = portfolios[0]["portfolio_name"] if portfolios else "Portafolio sin nombre"
+                portfolio_name = (
+                    portfolios[0]["portfolio_name"] if portfolios else "Portafolio sin nombre"
+                )
+                # Construir datos del resumen para el PDF
                 resumen_data = {
                     "portfolio_name": portfolio_name,
                     "periodo": periodo,
@@ -424,6 +498,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
             st.warning(pdf_message or "La generación PDF no está disponible en este entorno.")
 
     with pdf_columns[1]:
+        # Mostrar botón de descarga si el PDF ya fue generado
         cached_report = st.session_state.get(pdf_state_key)
         if cached_report:
             st.download_button(
