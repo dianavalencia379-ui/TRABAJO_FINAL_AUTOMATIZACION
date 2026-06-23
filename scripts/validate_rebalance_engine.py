@@ -14,7 +14,7 @@ from domain.rebalance_engine import build_rebalance_advisor_snapshot
 
 # Usuarios de prueba para validar el advisor de rebalanceo
 USER_EMAILS = (
-    "diana@example.com",
+    "dvalenciag@student.universidadviu.com",
     "antonio@example.com",
     "jose@example.com",
 )

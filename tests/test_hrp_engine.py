@@ -56,7 +56,7 @@ def test_build_hrp_portfolio_snapshot_returns_interpretable_weights() -> None:
 
     snapshot = build_hrp_portfolio_snapshot(
         connection=connection,
-        user_email="diana@example.com",
+        user_email="dvalenciag@student.universidadviu.com",
         prefer_live_data=False,
         lookback_days=150,
     )

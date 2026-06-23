@@ -43,7 +43,7 @@ Este documento toma como base el código actual del proyecto y no redefine la AP
   "user": {
     "id": 1,
     "name": "Diana Valencia",
-    "email": "diana@example.com"
+    "email": "dvalenciag@student.universidadviu.com"
   },
   "portfolio": {
     "portfolio_count": 1,
@@ -101,7 +101,7 @@ Este documento toma como base el código actual del proyecto y no redefine la AP
   "pdf": {
     "available": false
   },
-  "email": "diana@example.com"
+  "email": "dvalenciag@student.universidadviu.com"
 }
 ```
 

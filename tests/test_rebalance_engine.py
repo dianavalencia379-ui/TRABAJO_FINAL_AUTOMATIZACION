@@ -29,13 +29,13 @@ def test_build_rebalance_advisor_snapshot_returns_table_ready_output() -> None:
 
     snapshot = build_rebalance_advisor_snapshot(
         connection=connection,
-        user_email="diana@example.com",
+        user_email="dvalenciag@student.universidadviu.com",
         prefer_live_data=False,
         lookback_days=150,
         rebalance_threshold=3,
     )
 
-    assert snapshot["filters"]["user_email"] == "diana@example.com"
+    assert snapshot["filters"]["user_email"] == "dvalenciag@student.universidadviu.com"
     assert snapshot["rebalance_threshold"] == 0.03
     assert snapshot["rebalance_threshold_pct"] == 3.0
     assert snapshot["summary"]["asset_count"] == 5

@@ -14,7 +14,7 @@ from domain.hrp_engine import build_hrp_portfolio_snapshot
 
 # Usuarios de prueba para validar el motor HRP
 USER_EMAILS = (
-    "diana@example.com",
+    "dvalenciag@student.universidadviu.com",
     "antonio@example.com",
     "jose@example.com",
 )

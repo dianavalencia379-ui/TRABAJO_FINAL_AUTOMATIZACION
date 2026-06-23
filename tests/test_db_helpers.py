@@ -31,8 +31,8 @@ def test_get_user_portfolios_filters_by_user_email() -> None:
     """Comprueba el filtrado de portfolios por email de usuario."""
     connection = _build_seeded_connection()
 
-    rows = get_user_portfolios(connection, user_email="diana@example.com")
+    rows = get_user_portfolios(connection, user_email="dvalenciag@student.universidadviu.com")
 
     assert len(rows) == 1
     assert rows[0]["portfolio_name"] == "Growth USA"
-    assert rows[0]["user_email"] == "diana@example.com"
+    assert rows[0]["user_email"] == "dvalenciag@student.universidadviu.com"
