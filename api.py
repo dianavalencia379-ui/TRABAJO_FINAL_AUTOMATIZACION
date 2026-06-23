@@ -3,6 +3,7 @@
 # Dashboard Financiero. Define los endpoints para generar
 # informes PDF y verificar el estado del servicio.
 # ============================================================
+#TEST
 
 from __future__ import annotations
 
