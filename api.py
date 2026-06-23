@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import os
 from typing import Any
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -46,6 +47,7 @@ class ReportPdfResponse(BaseModel):
     relative_path: str
     absolute_path: str
     download_url: str
+    public_download_url: str
     generated_at: str
     size_bytes: int
     available: bool = True
@@ -150,7 +152,7 @@ def healthcheck() -> dict[str, str]:
     tags=["reports"],
     response_model=ReportGenerationResponse,
 )
-def generate_report(user_id: int) -> ReportGenerationResponse | JSONResponse:
+def generate_report(request: Request, user_id: int) -> ReportGenerationResponse | JSONResponse:
     """Genera y persiste un informe PDF para el usuario solicitado."""
     try:
         initialize_database(reset=False)
@@ -222,6 +224,21 @@ def generate_report(user_id: int) -> ReportGenerationResponse | JSONResponse:
     user_portfolios = dashboard_data.get("user_portfolios", [])
     relative_path = _build_relative_report_path(str(stored_path))
 
+    # Ruta interna del PDF dentro de la API.
+    # Aporte al objetivo general:
+    # Se conserva para mantener compatibilidad con pruebas locales y consumidores actuales.
+    download_url = f"/report-files/{report.file_name}"
+
+    # URL pública del PDF para herramientas externas como Zapier.
+    # Aporte al objetivo general:
+    # Zapier necesita una URL completa para descargar el PDF y adjuntarlo al correo.
+    public_base_url = os.getenv(
+        "PUBLIC_BASE_URL",
+        str(request.base_url).rstrip("/"),
+    ).rstrip("/")
+
+    public_download_url = f"{public_base_url}{download_url}"
+
     return ReportGenerationResponse(
         status="generated",
         message="Informe PDF generado correctamente.",
@@ -245,7 +262,8 @@ def generate_report(user_id: int) -> ReportGenerationResponse | JSONResponse:
             file_name=report.file_name,
             relative_path=relative_path,
             absolute_path=str(stored_path),
-            download_url=f"/report-files/{report.file_name}",
+            download_url=download_url,
+            public_download_url=public_download_url,
             generated_at=report.generated_at,
             size_bytes=len(report.content),
         ),
