@@ -1,3 +1,9 @@
+# ============================================================
+# reports/pdf_generator_modified1.py — Generador PDF mejorado
+# Versión extendida con gráficos (torta, línea, barras),
+# tablas dinámicas adaptativas y estilos corporativos.
+# ============================================================
+
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -10,58 +16,77 @@ from pathlib import Path
 import re
 from typing import Any, Callable, Iterable, Sequence
 
-# Tipos y errores
+
+# ------------------------------------------------------------
+# Excepciones y modelos de datos
+# ------------------------------------------------------------
+
 class ReportGenerationError(RuntimeError):
-    """Error controlado para generación de informes."""
+    """Error controlado para fallos en la generación de informes PDF."""
 
 
 @dataclass(frozen=True)
 class GeneratedPdfReport:
-    file_name: str
-    content: bytes
-    generated_at: str
-    warnings: list[str]
-    sections: list[str]
+    """Resultado inmutable de una generación de informe PDF."""
+    file_name: str       # Nombre del archivo PDF
+    content: bytes       # Contenido binario del PDF
+    generated_at: str    # Timestamp ISO de generación
+    warnings: list[str]  # Advertencias registradas
+    sections: list[str]  # Secciones incluidas en el informe
 
 
-# Paleta corporativa reutilizada en tablas y gráficos.
+# ------------------------------------------------------------
+# Paleta de colores corporativa
+# ------------------------------------------------------------
+
+# Colores principales reutilizados en tablas y gráficos
 _PALETTE_HEX = (
     "#2563EB", "#16A34A", "#D97706", "#DC2626", "#7C3AED",
     "#0891B2", "#DB2777", "#65A30D", "#475569", "#CA8A04",
 )
-_INK = "#0F172A"
-_MUTED = "#475569"
-_GRID = "#CBD5E1"
-_POSITIVE = "#15803D"
-_NEGATIVE = "#B91C1C"
+_INK = "#0F172A"        # Color principal de texto (casi negro)
+_MUTED = "#475569"      # Color de texto secundario (gris)
+_GRID = "#CBD5E1"       # Color de bordes de tablas
+_POSITIVE = "#15803D"   # Color para valores positivos (verde)
+_NEGATIVE = "#B91C1C"   # Color para valores negativos (rojo)
 
 
-# Carga de dependencias
+# ------------------------------------------------------------
+# Carga de dependencias ReportLab (con caché)
+# ------------------------------------------------------------
 
 @lru_cache(maxsize=1)
 def _load_reportlab() -> dict[str, Any]:
-    """Importa (una sola vez) los módulos de ReportLab requeridos."""
+    """
+    Importa una sola vez los módulos de ReportLab requeridos.
+    Usa lru_cache para evitar reimportaciones en llamadas sucesivas.
+    Lanza ReportGenerationError si ReportLab no está instalado.
+    """
     try:
         return {
-            "colors": importlib.import_module("reportlab.lib.colors"),
-            "pagesizes": importlib.import_module("reportlab.lib.pagesizes"),
-            "styles": importlib.import_module("reportlab.lib.styles"),
-            "units": importlib.import_module("reportlab.lib.units"),
-            "platypus": importlib.import_module("reportlab.platypus"),
-            "shapes": importlib.import_module("reportlab.graphics.shapes"),
-            "piecharts": importlib.import_module("reportlab.graphics.charts.piecharts"),
+            "colors":     importlib.import_module("reportlab.lib.colors"),
+            "pagesizes":  importlib.import_module("reportlab.lib.pagesizes"),
+            "styles":     importlib.import_module("reportlab.lib.styles"),
+            "units":      importlib.import_module("reportlab.lib.units"),
+            "platypus":   importlib.import_module("reportlab.platypus"),
+            "shapes":     importlib.import_module("reportlab.graphics.shapes"),
+            "piecharts":  importlib.import_module("reportlab.graphics.charts.piecharts"),
             "linecharts": importlib.import_module("reportlab.graphics.charts.linecharts"),
-            "barcharts": importlib.import_module("reportlab.graphics.charts.barcharts"),
-            "legends": importlib.import_module("reportlab.graphics.charts.legends"),
+            "barcharts":  importlib.import_module("reportlab.graphics.charts.barcharts"),
+            "legends":    importlib.import_module("reportlab.graphics.charts.legends"),
         }
-    except ImportError as exc:  
+    except ImportError as exc:
         raise ReportGenerationError(
-            
+            "La generación PDF requiere ReportLab. "
+            "Instala dependencias con requirements.txt para habilitar la descarga."
         ) from exc
 
 
 def is_pdf_generation_available() -> tuple[bool, str | None]:
-    
+    """
+    Verifica si ReportLab está disponible.
+    Retorna (True, None) si está disponible, o (False, mensaje) si no.
+    """
     try:
         _load_reportlab()
     except ReportGenerationError as exc:
@@ -69,19 +94,27 @@ def is_pdf_generation_available() -> tuple[bool, str | None]:
     return True, None
 
 
-# Helpers numéricos / de formato
+# ------------------------------------------------------------
+# Funciones auxiliares de formato y conversión
+# ------------------------------------------------------------
 
+# Expresión regular para extraer números de textos formateados
 _NUMERIC_RE = re.compile(r"-?\d[\d,]*\.?\d*")
 
 
 def _to_float(value: Any, default: float = 0.0) -> float:
-    
+    """
+    Convierte cualquier valor a float de forma segura.
+    Maneja strings con $, % y comas. Retorna default si falla.
+    """
     if value is None:
         return default
     if isinstance(value, (int, float)):
         return float(value)
     try:
-        return float(str(value).replace(",", "").replace("%", "").replace("$", "").strip())
+        return float(
+            str(value).replace(",", "").replace("%", "").replace("$", "").strip()
+        )
     except (TypeError, ValueError):
         return default
 
@@ -102,7 +135,7 @@ def _format_number(value: Any, digits: int = 2) -> str:
 
 
 def _escape(value: str) -> str:
-    """Escapa caracteres reservados antes de insertarlos en párrafos PDF."""
+    """Escapa caracteres reservados XML antes de insertarlos en párrafos PDF."""
     return str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
@@ -119,13 +152,20 @@ def _deduplicate_strings(values: Iterable[str]) -> list[str]:
 
 
 def _cell_sign(text: Any) -> int:
-    """Detecta el signo de un valor formateado (+1, -1 o 0)."""
+    """
+    Detecta el signo de un valor formateado en una celda.
+    Retorna +1 (positivo), -1 (negativo) o 0 (cero/no numérico).
+    """
     match = _NUMERIC_RE.search(str(text).replace("\u2212", "-"))
     if not match:
         return 0
     number = _to_float(match.group())
     return (number > 0) - (number < 0)
 
+
+# ------------------------------------------------------------
+# Tabla dinámica (pivot)
+# ------------------------------------------------------------
 
 def build_pivot_table(
     rows: Sequence[dict[str, Any]],
@@ -135,7 +175,15 @@ def build_pivot_table(
     agg: str = "sum",
     label_default: str = "n/d",
 ) -> list[dict[str, Any]]:
-    
+    """
+    Construye una tabla pivote agrupando filas por una clave.
+
+    Parámetros:
+      group_by      — campo para agrupar
+      value_key     — campo numérico a agregar
+      agg           — función de agregación: 'sum', 'avg', 'max', 'min'
+      label_default — valor por defecto para claves vacías
+    """
     buckets: "OrderedDict[str, list[float]]" = OrderedDict()
     for row in rows:
         key = str(row.get(group_by, label_default) or label_default)
@@ -155,46 +203,57 @@ def build_pivot_table(
         else:
             raise ValueError(f"Agregación no soportada: {agg}")
         result.append({"group": key, "count": len(measures), "value": value})
+
+    # Ordenar por valor descendente
     result.sort(key=lambda item: item["value"], reverse=True)
     return result
 
 
-# Construcción del payload intermedio
+# ------------------------------------------------------------
+# Construcción del payload del informe
+# ------------------------------------------------------------
 
 def build_report_payload(
     *,
     selected_user: dict[str, Any],
     dashboard_data: dict[str, Any],
 ) -> dict[str, Any]:
-    """Arma la estructura intermedia usada para renderizar el informe."""
+    """
+    Arma la estructura intermedia usada para renderizar el informe PDF.
+    Incluye tablas formateadas, datos para gráficos y pivot tables.
+    """
     generated_at = datetime.now(UTC).isoformat()
+
+    # Extraer snapshots del dashboard
     portfolio_snapshot = dashboard_data.get("portfolio_snapshot", {})
     evolution_snapshot = dashboard_data.get("evolution_snapshot", {})
     hrp_snapshot = dashboard_data.get("hrp_snapshot", {})
     advisor_snapshot = dashboard_data.get("advisor_snapshot", {})
     user_portfolios = dashboard_data.get("user_portfolios", [])
 
+    # Resúmenes de cada snapshot
     portfolio_summary = portfolio_snapshot.get("portfolio_summary", {})
     evolution_metrics = evolution_snapshot.get("metrics", {})
     advisor_summary = advisor_snapshot.get("summary", {})
     hrp_diagnostics = hrp_snapshot.get("diagnostics", {})
     advisor_diagnostics = advisor_snapshot.get("diagnostics", {})
 
-    warnings = _deduplicate_strings(
-        [
-            *hrp_diagnostics.get("warnings", []),
-            *advisor_diagnostics.get("warnings", []),
-        ]
-    )
+    # Consolidar y deduplicar advertencias
+    warnings = _deduplicate_strings([
+        *hrp_diagnostics.get("warnings", []),
+        *advisor_diagnostics.get("warnings", []),
+    ])
 
+    # Extraer datos de tablas
     positions = portfolio_snapshot.get("positions_table", [])
     composition = portfolio_snapshot.get("composition", {}).get("by_asset", [])
     evolution_series = evolution_snapshot.get("series", [])
     weights_table = hrp_snapshot.get("weights_table", [])
     advisor_table = advisor_snapshot.get("advisor_table", [])
 
-    #  Filas de tablas 
+    # Construir filas formateadas para cada sección del informe
     report_rows = {
+        # Datos generales del usuario
         "user_rows": [
             ["Usuario", selected_user.get("user_name", "n/d")],
             ["Email", selected_user.get("user_email", "n/d")],
@@ -207,6 +266,7 @@ def build_report_payload(
             ["Máximo drawdown", _format_pct(evolution_metrics.get("max_drawdown_pct", 0.0))],
             ["Fuente HRP", str(hrp_diagnostics.get("price_source", "n/d"))],
         ],
+        # Portfolios del usuario
         "portfolio_rows": [
             [
                 item.get("portfolio_name", "n/d"),
@@ -216,6 +276,7 @@ def build_report_payload(
             ]
             for item in user_portfolios
         ],
+        # Composición por activo
         "composition_rows": [
             [
                 item.get("ticker", "n/d"),
@@ -226,6 +287,7 @@ def build_report_payload(
             ]
             for item in composition
         ],
+        # Posiciones del portfolio
         "position_rows": [
             [
                 item.get("portfolio_name", "n/d"),
@@ -237,6 +299,7 @@ def build_report_payload(
             ]
             for item in positions
         ],
+        # Métricas de evolución histórica
         "evolution_metric_rows": [
             ["Inicio", str(evolution_metrics.get("start_date") or "n/d")],
             ["Fin", str(evolution_metrics.get("end_date") or "n/d")],
@@ -247,6 +310,7 @@ def build_report_payload(
             ["Peor periodo", _format_pct(evolution_metrics.get("worst_period_return_pct", 0.0))],
             ["Drawdown actual", _format_pct(evolution_metrics.get("latest_drawdown_pct", 0.0))],
         ],
+        # Serie histórica (últimos 12 puntos)
         "evolution_rows": [
             [
                 item.get("date", "n/d"),
@@ -257,6 +321,7 @@ def build_report_payload(
             ]
             for item in evolution_series[-12:]
         ],
+        # Pesos actuales ordenados de mayor a menor
         "current_weight_rows": [
             [
                 item.get("ticker", "n/d"),
@@ -264,8 +329,13 @@ def build_report_payload(
                 _format_pct(_to_float(item.get("current_weight", 0.0)) * 100.0),
                 _format_currency(item.get("current_value", 0.0)),
             ]
-            for item in sorted(weights_table, key=lambda row: _to_float(row.get("current_weight", 0.0)), reverse=True)
+            for item in sorted(
+                weights_table,
+                key=lambda row: _to_float(row.get("current_weight", 0.0)),
+                reverse=True
+            )
         ],
+        # Pesos HRP recomendados ordenados de mayor a menor
         "hrp_weight_rows": [
             [
                 item.get("ticker", "n/d"),
@@ -273,8 +343,13 @@ def build_report_payload(
                 _format_pct(_to_float(item.get("recommended_weight", 0.0)) * 100.0),
                 _format_pct(_to_float(item.get("difference", 0.0)) * 100.0),
             ]
-            for item in sorted(weights_table, key=lambda row: _to_float(row.get("recommended_weight", 0.0)), reverse=True)
+            for item in sorted(
+                weights_table,
+                key=lambda row: _to_float(row.get("recommended_weight", 0.0)),
+                reverse=True
+            )
         ],
+        # Tabla de rebalanceo con acciones
         "rebalance_rows": [
             [
                 item.get("ticker", "n/d"),
@@ -286,6 +361,7 @@ def build_report_payload(
             ]
             for item in advisor_table
         ],
+        # Diagnóstico técnico HRP
         "diagnostic_rows": [
             ["Fuente de precios HRP", str(hrp_diagnostics.get("price_source", "n/d"))],
             ["Histórico usado", str(hrp_diagnostics.get("history_rows", 0))],
@@ -296,8 +372,10 @@ def build_report_payload(
         ],
     }
 
-    
-    pivot = build_pivot_table(positions, group_by="portfolio_name", value_key="current_value", agg="sum")
+    # Tabla dinámica (pivot) por portfolio
+    pivot = build_pivot_table(
+        positions, group_by="portfolio_name", value_key="current_value", agg="sum"
+    )
     total_pivot_value = sum(item["value"] for item in pivot)
     report_rows["pivot_portfolio_rows"] = [
         [
@@ -308,6 +386,7 @@ def build_report_payload(
         ]
         for item in pivot
     ]
+    # Fila de totales del pivot
     report_rows["pivot_portfolio_total"] = [
         "Total",
         str(sum(item["count"] for item in pivot)),
@@ -315,33 +394,47 @@ def build_report_payload(
         _format_pct(100.0 if total_pivot_value else 0.0),
     ]
 
-    
+    # Filas de totales para composición y posiciones
     composition_total_value = sum(_to_float(item.get("value", 0.0)) for item in composition)
     positions_total_value = sum(_to_float(item.get("current_value", 0.0)) for item in positions)
-    report_rows["composition_total"] = ["", "Total", "", _format_currency(composition_total_value), _format_pct(100.0 if composition_total_value else 0.0)]
-    report_rows["position_total"] = ["", "", "Total", "", _format_currency(positions_total_value), _format_pct(100.0 if positions_total_value else 0.0)]
+    report_rows["composition_total"] = [
+        "", "Total", "", _format_currency(composition_total_value),
+        _format_pct(100.0 if composition_total_value else 0.0)
+    ]
+    report_rows["position_total"] = [
+        "", "", "Total", "", _format_currency(positions_total_value),
+        _format_pct(100.0 if positions_total_value else 0.0)
+    ]
 
-    
+    # Datos para gráficos del informe
     chart_data = {
+        # Gráfico de torta: composición por activo
         "composition_pie": [
             (str(item.get("asset_name") or item.get("ticker") or "n/d"), _to_float(item.get("weight_pct", 0.0)))
             for item in composition
             if _to_float(item.get("weight_pct", 0.0)) > 0
         ],
+        # Gráfico de línea: evolución histórica
         "evolution_line": {
             "dates": [str(item.get("date", "")) for item in evolution_series],
             "values": [_to_float(item.get("total_value", 0.0)) for item in evolution_series],
         },
+        # Gráfico de barras: pesos actuales vs HRP
         "weights_compare": [
             {
                 "ticker": str(item.get("ticker", "n/d")),
                 "current": _to_float(item.get("current_weight", 0.0)) * 100.0,
                 "recommended": _to_float(item.get("recommended_weight", 0.0)) * 100.0,
             }
-            for item in sorted(weights_table, key=lambda r: _to_float(r.get("recommended_weight", 0.0)), reverse=True)
+            for item in sorted(
+                weights_table,
+                key=lambda r: _to_float(r.get("recommended_weight", 0.0)),
+                reverse=True
+            )
         ],
     }
 
+    # Secciones del informe
     sections = [
         "Datos del usuario", "Resumen por portafolio (dinámico)", "Portfolio",
         "Composición", "Valor total", "Evolución histórica", "Pesos actuales",
@@ -381,6 +474,9 @@ def build_report_payload(
     }
 
 
+# ------------------------------------------------------------
+# Construcción de estilos tipográficos
+# ------------------------------------------------------------
 
 def _build_styles(modules: dict[str, Any], payload_title: str) -> dict[str, Any]:
     """Construye la hoja de estilos del informe una sola vez."""
@@ -389,22 +485,26 @@ def _build_styles(modules: dict[str, Any], payload_title: str) -> dict[str, Any]
     base = styles_module.getSampleStyleSheet()
 
     def _style(name: str, parent: str, **kwargs: Any) -> Any:
+        """Crea un estilo personalizado basado en uno existente."""
         return styles_module.ParagraphStyle(name, parent=base[parent], **kwargs)
 
     return {
-        "title": _style("ReportTitle", "Title", textColor=colors.HexColor(_INK), fontSize=20, spaceAfter=8),
+        "title":    _style("ReportTitle",    "Title",    textColor=colors.HexColor(_INK),    fontSize=20, spaceAfter=8),
         "subtitle": _style("ReportSubtitle", "Heading2", textColor=colors.HexColor("#334155"), fontSize=11, spaceAfter=12),
-        "section": _style("ReportSection", "Heading2", textColor=colors.HexColor(_INK), fontSize=14, spaceBefore=10, spaceAfter=8),
-        "body": _style("ReportBody", "BodyText", leading=15, spaceAfter=8),
-        "warning": _style("ReportWarning", "BodyText", textColor=colors.HexColor("#92400E"), backColor=colors.HexColor("#FEF3C7"), borderPadding=8, leading=14, spaceAfter=8),
-        "footnote": _style("ReportFootnote", "BodyText", textColor=colors.HexColor(_MUTED), fontSize=9, leading=12),
-        "caption": _style("ReportCaption", "BodyText", textColor=colors.HexColor(_MUTED), fontSize=9, leading=11, spaceBefore=2, spaceAfter=10, alignment=1),
+        "section":  _style("ReportSection",  "Heading2", textColor=colors.HexColor(_INK),    fontSize=14, spaceBefore=10, spaceAfter=8),
+        "body":     _style("ReportBody",     "BodyText", leading=15, spaceAfter=8),
+        "warning":  _style("ReportWarning",  "BodyText", textColor=colors.HexColor("#92400E"), backColor=colors.HexColor("#FEF3C7"), borderPadding=8, leading=14, spaceAfter=8),
+        "footnote": _style("ReportFootnote", "BodyText", textColor=colors.HexColor(_MUTED),  fontSize=9, leading=12),
+        "caption":  _style("ReportCaption",  "BodyText", textColor=colors.HexColor(_MUTED),  fontSize=9, leading=11, spaceBefore=2, spaceAfter=10, alignment=1),
     }
 
 
+# ------------------------------------------------------------
+# Tablas adaptativas
+# ------------------------------------------------------------
 
 def _adaptive_widths(widths: Sequence[int], available: float) -> list[float]:
-    """Reescala los anchos de columna para llenar el ancho disponible."""
+    """Reescala los anchos de columna para llenar el ancho disponible del documento."""
     total = float(sum(widths)) or 1.0
     return [w / total * available for w in widths]
 
@@ -421,24 +521,41 @@ def _build_dynamic_table(
     total_row: Sequence[str] | None = None,
     fallback_row: Sequence[str] | None = None,
 ) -> Any:
-    
+    """
+    Crea una tabla ReportLab adaptativa con estilos dinámicos.
+
+    Características:
+      - Anchos de columna escalados al ancho disponible
+      - Colorea celdas con valores positivos/negativos (signed_columns)
+      - Colorea y enfatiza la columna de acción HRP (action_column)
+      - Agrega fila de totales destacada (total_row)
+      - Muestra fila de fallback si no hay datos (fallback_row)
+    """
     colors = modules["colors"]
     platypus = modules["platypus"]
 
+    # Usar fallback si no hay filas de datos
     body = list(rows) if rows else [list(fallback_row or (["Sin datos"] + [""] * (len(headers) - 1)))]
     table_data: list[list[str]] = [list(headers), *[list(r) for r in body]]
+
+    # Agregar fila de totales al final si se proporcionó
     if total_row is not None:
         table_data.append(list(total_row))
 
+    # Escalar anchos al ancho disponible del documento
     scaled = _adaptive_widths(widths, available_width)
     table = platypus.Table(table_data, colWidths=scaled, repeatRows=1)
 
+    # Estilo base de la tabla
     style: list[tuple] = [
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(_INK)),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor(_GRID)),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.HexColor("#FFFFFF"), colors.HexColor("#F8FAFC")]),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(_INK)),     # Cabecera oscura
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),                # Texto cabecera blanco
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),             # Fuente cabecera negrita
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor(_GRID)),    # Bordes grises
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [                       # Filas alternadas
+            colors.HexColor("#FFFFFF"),
+            colors.HexColor("#F8FAFC"),
+        ]),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
         ("LEADING", (0, 0), (-1, -1), 11),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
@@ -446,7 +563,7 @@ def _build_dynamic_table(
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ]
 
-    
+    # Colorear celdas con signo en columnas indicadas
     for r_offset, row in enumerate(body, start=1):
         for col in signed_columns:
             if col < len(row):
@@ -455,6 +572,8 @@ def _build_dynamic_table(
                     style.append(("TEXTCOLOR", (col, r_offset), (col, r_offset), colors.HexColor(_POSITIVE)))
                 elif sign < 0:
                     style.append(("TEXTCOLOR", (col, r_offset), (col, r_offset), colors.HexColor(_NEGATIVE)))
+
+        # Colorear columna de acción según el tipo de recomendación
         if action_column is not None and action_column < len(row):
             label = str(row[action_column]).lower()
             if any(k in label for k in ("aument", "increase", "comprar", "buy")):
@@ -466,7 +585,7 @@ def _build_dynamic_table(
             style.append(("TEXTCOLOR", (action_column, r_offset), (action_column, r_offset), colors.HexColor(color)))
             style.append(("FONTNAME", (action_column, r_offset), (action_column, r_offset), "Helvetica-Bold"))
 
-   
+    # Estilo especial para la fila de totales
     if total_row is not None:
         last = len(table_data) - 1
         style += [
@@ -479,18 +598,31 @@ def _build_dynamic_table(
     return table
 
 
+# ------------------------------------------------------------
+# Gráficos ReportLab
+# ------------------------------------------------------------
 
 def _placeholder(modules: dict[str, Any], message: str, styles: dict[str, Any]) -> Any:
+    """Muestra un mensaje de placeholder cuando no hay datos para graficar."""
     return modules["platypus"].Paragraph(_escape(message), styles["caption"])
 
 
-def _build_pie_chart(modules: dict[str, Any], pairs: Sequence[tuple[str, float]], width: float, max_slices: int = 8) -> Any:
- 
+def _build_pie_chart(
+    modules: dict[str, Any],
+    pairs: Sequence[tuple[str, float]],
+    width: float,
+    max_slices: int = 8,
+) -> Any:
+    """
+    Construye un gráfico de torta con leyenda lateral.
+    Agrupa en 'Otros' las porciones que excedan max_slices.
+    """
     shapes = modules["shapes"]
     piecharts = modules["piecharts"]
     colors = modules["colors"]
     legends = modules["legends"]
 
+    # Ordenar por valor y agrupar excedente en 'Otros'
     ordered = sorted(pairs, key=lambda p: p[1], reverse=True)
     if len(ordered) > max_slices:
         head = ordered[: max_slices - 1]
@@ -501,14 +633,17 @@ def _build_pie_chart(modules: dict[str, Any], pairs: Sequence[tuple[str, float]]
     pie = piecharts.Pie()
     pie.x, pie.y = 20, 25
     pie.width, pie.height = 170, 170
-    pie.data = [max(v, 0.0001) for _, v in ordered]
+    pie.data = [max(v, 0.0001) for _, v in ordered]  # Evitar valor 0 en pie
     pie.labels = None
     pie.slices.strokeColor = colors.white
     pie.slices.strokeWidth = 1
+
+    # Asignar color de paleta a cada porción
     for i, _ in enumerate(ordered):
         pie.slices[i].fillColor = colors.HexColor(_PALETTE_HEX[i % len(_PALETTE_HEX)])
     drawing.add(pie)
 
+    # Leyenda lateral con nombre y porcentaje de cada porción
     legend = legends.Legend()
     legend.x, legend.y = 215, 185
     legend.dx = legend.dy = 8
@@ -525,12 +660,22 @@ def _build_pie_chart(modules: dict[str, Any], pairs: Sequence[tuple[str, float]]
     return drawing
 
 
-def _build_line_chart(modules: dict[str, Any], dates: Sequence[str], values: Sequence[float], width: float, max_points: int = 24) -> Any:
-    """Línea de evolución del valor total del portafolio."""
+def _build_line_chart(
+    modules: dict[str, Any],
+    dates: Sequence[str],
+    values: Sequence[float],
+    width: float,
+    max_points: int = 24,
+) -> Any:
+    """
+    Construye un gráfico de línea para la evolución del valor total del portfolio.
+    Reduce el número de puntos si supera max_points para mejorar legibilidad.
+    """
     shapes = modules["shapes"]
     linecharts = modules["linecharts"]
     colors = modules["colors"]
 
+    # Reducir puntos si hay demasiados
     if len(values) > max_points:
         step = len(values) / max_points
         idx = [int(i * step) for i in range(max_points)]
@@ -548,6 +693,7 @@ def _build_line_chart(modules: dict[str, Any], dates: Sequence[str], values: Seq
     chart.lineLabelFormat = None
     chart.joinedLines = 1
 
+    # Configurar eje de valores con margen del 10%
     lo, hi = (min(values), max(values)) if values else (0.0, 1.0)
     span = (hi - lo) or (abs(hi) or 1.0)
     chart.valueAxis.valueMin = lo - span * 0.1
@@ -556,6 +702,7 @@ def _build_line_chart(modules: dict[str, Any], dates: Sequence[str], values: Seq
     chart.valueAxis.labelTextFormat = lambda v: f"${v:,.0f}"
     chart.valueAxis.labels.fontSize = 7
 
+    # Mostrar solo fechas clave en el eje X para evitar saturación
     n = len(dates)
     keep = {0, n - 1, n // 2, n // 4, (3 * n) // 4} if n else set()
     chart.categoryAxis.categoryNames = [d if i in keep else "" for i, d in enumerate(dates)]
@@ -567,8 +714,16 @@ def _build_line_chart(modules: dict[str, Any], dates: Sequence[str], values: Seq
     return drawing
 
 
-def _build_bar_chart(modules: dict[str, Any], items: Sequence[dict[str, Any]], width: float, max_bars: int = 8) -> Any:
-    """Barras agrupadas: peso actual vs. peso HRP recomendado (%)."""
+def _build_bar_chart(
+    modules: dict[str, Any],
+    items: Sequence[dict[str, Any]],
+    width: float,
+    max_bars: int = 8,
+) -> Any:
+    """
+    Construye barras agrupadas comparando peso actual vs peso HRP recomendado (%).
+    Limita a max_bars activos para mantener legibilidad.
+    """
     shapes = modules["shapes"]
     barcharts = modules["barcharts"]
     colors = modules["colors"]
@@ -579,6 +734,8 @@ def _build_bar_chart(modules: dict[str, Any], items: Sequence[dict[str, Any]], w
     chart = barcharts.VerticalBarChart()
     chart.x, chart.y = 40, 55
     chart.width, chart.height = width - 70, 160
+
+    # Dos series: peso actual y peso recomendado
     chart.data = [
         [it["current"] for it in items],
         [it["recommended"] for it in items],
@@ -587,11 +744,12 @@ def _build_bar_chart(modules: dict[str, Any], items: Sequence[dict[str, Any]], w
     chart.categoryAxis.labels.fontSize = 7
     chart.categoryAxis.labels.angle = 30
     chart.categoryAxis.labels.boxAnchor = "n"
-    chart.bars[0].fillColor = colors.HexColor(_PALETTE_HEX[0])
-    chart.bars[1].fillColor = colors.HexColor(_PALETTE_HEX[1])
+    chart.bars[0].fillColor = colors.HexColor(_PALETTE_HEX[0])  # Azul: peso actual
+    chart.bars[1].fillColor = colors.HexColor(_PALETTE_HEX[1])  # Verde: peso HRP
     chart.barWidth = 6
     chart.groupSpacing = 8
 
+    # Configurar eje de valores con margen del 15%
     all_vals = [v for serie in chart.data for v in serie] or [0.0]
     chart.valueAxis.valueMin = 0
     chart.valueAxis.valueMax = max(all_vals) * 1.15 or 1.0
@@ -600,6 +758,7 @@ def _build_bar_chart(modules: dict[str, Any], items: Sequence[dict[str, Any]], w
     chart.valueAxis.labels.fontSize = 7
     drawing.add(chart)
 
+    # Leyenda de colores
     legend = legends.Legend()
     legend.x, legend.y = 40, 235
     legend.dx = legend.dy = 8
@@ -616,12 +775,16 @@ def _build_bar_chart(modules: dict[str, Any], items: Sequence[dict[str, Any]], w
     return drawing
 
 
+# ------------------------------------------------------------
+# Cabecera y pie de página
+# ------------------------------------------------------------
 
 def _page_header_footer(modules: dict[str, Any]) -> Callable[[Any, Any], None]:
-    """Devuelve el callback que dibuja cabecera y pie de página del PDF."""
+    """Devuelve el callback que dibuja cabecera y pie en cada página del PDF."""
     colors = modules["colors"]
 
     def _callback(canvas: Any, document: Any) -> None:
+        """Pinta el nombre del proyecto y el número de página."""
         canvas.saveState()
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor(_MUTED))
@@ -635,6 +798,9 @@ def _page_header_footer(modules: dict[str, Any]) -> Callable[[Any, Any], None]:
     return _callback
 
 
+# ------------------------------------------------------------
+# Ensamblado del story (contenido del PDF)
+# ------------------------------------------------------------
 
 def _assemble_story(
     modules: dict[str, Any],
@@ -642,19 +808,24 @@ def _assemble_story(
     styles: dict[str, Any],
     available_width: float,
 ) -> list[Any]:
-    """Construye la lista de flowables del informe."""
+    """
+    Construye la lista de flowables del informe en orden lógico.
+    Cada sección agrega párrafos, tablas y gráficos al story.
+    """
     platypus = modules["platypus"]
     tables = payload["tables"]
     charts = payload["charts"]
     story: list[Any] = []
 
     def section(title: str) -> None:
+        """Agrega un encabezado de sección al story."""
         story.append(platypus.Paragraph(title, styles["section"]))
 
     def caption(text: str) -> None:
+        """Agrega un pie de gráfico centrado al story."""
         story.append(platypus.Paragraph(text, styles["caption"]))
 
-    # Portada / encabezado
+    # Portada del informe
     story.append(platypus.Paragraph(payload["title"], styles["title"]))
     story.append(platypus.Paragraph(payload["subtitle"], styles["subtitle"]))
     story.append(platypus.Paragraph(
@@ -663,16 +834,20 @@ def _assemble_story(
     ))
     story.append(platypus.Spacer(1, 8))
 
+    # Advertencias de datos
     if payload["warnings"]:
         section("<b>Advertencias de datos</b>")
         for warning in payload["warnings"]:
             story.append(platypus.Paragraph(_escape(warning), styles["warning"]))
 
-    # Datos del usuario
+    # Sección: Datos del usuario
     section("Datos del usuario y valor total")
-    story.append(_build_dynamic_table(modules, ["Campo", "Valor"], tables["user_rows"], [120, 220], available_width=available_width))
+    story.append(_build_dynamic_table(
+        modules, ["Campo", "Valor"], tables["user_rows"], [120, 220],
+        available_width=available_width
+    ))
 
-    # Tabla dinámica (pivote) por portafolio
+    # Sección: Resumen dinámico (pivot) por portfolio
     section("Resumen dinámico por portafolio")
     story.append(_build_dynamic_table(
         modules,
@@ -684,7 +859,7 @@ def _assemble_story(
         fallback_row=["Sin portafolios", "0", "$0.00", "0.00%"],
     ))
 
-    # Portfolio
+    # Sección: Portfolio del usuario
     section("Portfolio del usuario")
     story.append(_build_dynamic_table(
         modules,
@@ -695,7 +870,7 @@ def _assemble_story(
         fallback_row=["Sin portfolios", "0", "$0.00", "n/d"],
     ))
 
-    # Composición + torta
+    # Sección: Composición con gráfico de torta
     section("Composición actual")
     if charts["composition_pie"]:
         story.append(_build_pie_chart(modules, charts["composition_pie"], available_width))
@@ -712,7 +887,7 @@ def _assemble_story(
         fallback_row=["n/d", "Sin datos", "0", "$0.00", "0.00%"],
     ))
 
-    # Posiciones
+    # Sección: Posiciones
     section("Posiciones y valor total")
     story.append(_build_dynamic_table(
         modules,
@@ -724,15 +899,23 @@ def _assemble_story(
         fallback_row=["n/d", "n/d", "Sin posiciones", "0", "$0.00", "0.00%"],
     ))
 
-    # Evolución + línea
+    # Nueva página para evolución histórica
     story.append(platypus.PageBreak())
     section("Evolución histórica")
     if charts["evolution_line"]["values"]:
-        story.append(_build_line_chart(modules, charts["evolution_line"]["dates"], charts["evolution_line"]["values"], available_width))
+        story.append(_build_line_chart(
+            modules,
+            charts["evolution_line"]["dates"],
+            charts["evolution_line"]["values"],
+            available_width
+        ))
         caption("Evolución del valor total del portafolio a lo largo del tiempo.")
     else:
         story.append(_placeholder(modules, "Sin serie histórica para graficar.", styles))
-    story.append(_build_dynamic_table(modules, ["Métrica", "Valor"], tables["evolution_metric_rows"], [150, 160], available_width=available_width))
+    story.append(_build_dynamic_table(
+        modules, ["Métrica", "Valor"], tables["evolution_metric_rows"],
+        [150, 160], available_width=available_width
+    ))
     story.append(platypus.Spacer(1, 6))
     story.append(_build_dynamic_table(
         modules,
@@ -740,11 +923,11 @@ def _assemble_story(
         tables["evolution_rows"],
         [90, 100, 100, 110, 90],
         available_width=available_width,
-        signed_columns=[2, 3, 4],
+        signed_columns=[2, 3, 4],  # Colorear columnas con signo
         fallback_row=["n/d", "$0.00", "0.00%", "0.00%", "0.00%"],
     ))
 
-    # Pesos actuales vs HRP + barras
+    # Nueva página para pesos y rebalanceo
     story.append(platypus.PageBreak())
     section("Pesos actuales vs. HRP recomendado")
     if charts["weights_compare"]:
@@ -770,7 +953,7 @@ def _assemble_story(
         tables["hrp_weight_rows"],
         [70, 220, 90, 100],
         available_width=available_width,
-        signed_columns=[3],
+        signed_columns=[3],  # Colorear desviación según signo
         fallback_row=["n/d", "Sin datos", "0.00%", "0.00%"],
     ))
 
@@ -781,27 +964,37 @@ def _assemble_story(
         tables["rebalance_rows"],
         [60, 200, 85, 90, 95, 75],
         available_width=available_width,
-        signed_columns=[4],
-        action_column=5,
+        signed_columns=[4],   # Colorear delta de valor
+        action_column=5,       # Colorear columna de acción
         fallback_row=["n/d", "Sin datos", "0.00%", "0.00%", "$0.00", "Mantener"],
     ))
 
-    # Cierre
+    # Secciones de cierre
     section("Comentario final")
     story.append(platypus.Paragraph(_escape(payload["commentary"]), styles["body"]))
     section("Diagnóstico de soporte")
-    story.append(_build_dynamic_table(modules, ["Indicador", "Valor"], tables["diagnostic_rows"], [150, 240], available_width=available_width))
+    story.append(_build_dynamic_table(
+        modules, ["Indicador", "Valor"], tables["diagnostic_rows"],
+        [150, 240], available_width=available_width
+    ))
     section("Aviso académico")
     story.append(platypus.Paragraph(_escape(payload["academic_notice"]), styles["footnote"]))
     return story
 
+
+# ------------------------------------------------------------
+# Función principal de generación del PDF
+# ------------------------------------------------------------
 
 def generate_user_report_pdf(
     *,
     selected_user: dict[str, Any],
     dashboard_data: dict[str, Any],
 ) -> GeneratedPdfReport:
-    """Genera el binario PDF final a partir de los snapshots del usuario."""
+    """
+    Genera el binario PDF final a partir de los snapshots del usuario.
+    Ensambla el story y construye el documento con ReportLab.
+    """
     payload = build_report_payload(selected_user=selected_user, dashboard_data=dashboard_data)
     modules = _load_reportlab()
 
@@ -810,6 +1003,7 @@ def generate_user_report_pdf(
     platypus = modules["platypus"]
     styles = _build_styles(modules, payload["title"])
 
+    # Crear documento PDF en A4 horizontal
     buffer = BytesIO()
     document = platypus.SimpleDocTemplate(
         buffer,
@@ -823,9 +1017,12 @@ def generate_user_report_pdf(
         subject="Informe PDF por usuario",
     )
 
+    # Calcular ancho disponible y construir el story
     available_width = document.width
     story = _assemble_story(modules, payload, styles, available_width)
     page_decorator = _page_header_footer(modules)
+
+    # Aplicar cabecera/pie en todas las páginas
     document.build(story, onFirstPage=page_decorator, onLaterPages=page_decorator)
 
     return GeneratedPdfReport(
@@ -837,8 +1034,9 @@ def generate_user_report_pdf(
     )
 
 
-
+# ------------------------------------------------------------
 # Utilidades de archivo
+# ------------------------------------------------------------
 
 def build_report_filename(selected_user: dict[str, Any]) -> str:
     """Construye un nombre de archivo estable y seguro para el PDF."""
@@ -855,6 +1053,10 @@ def persist_generated_report(report: GeneratedPdfReport, *, output_dir: Path) ->
     file_path.write_bytes(report.content)
     return file_path
 
+
+# ------------------------------------------------------------
+# Comentario final automático
+# ------------------------------------------------------------
 
 def _build_final_comment(
     *,
