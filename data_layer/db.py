@@ -1,3 +1,9 @@
+# ============================================================
+# data_layer/db.py — Utilidades SQLite para el dashboard
+# Gestiona conexiones, esquema, seed y consultas principales
+# del proyecto Dashboard Financiero.
+# ============================================================
+
 """Utilidades SQLite para el dashboard financiero."""
 
 from __future__ import annotations
@@ -10,7 +16,13 @@ from config import settings
 from data_layer.seed_data import build_seed_payload
 
 
+# ------------------------------------------------------------
+# Esquema de la base de datos
+# Define las tablas e índices necesarios para la aplicación
+# ------------------------------------------------------------
+
 SCHEMA_STATEMENTS: tuple[str, ...] = (
+    # Tabla de usuarios del sistema
     """
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,6 +31,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         created_at TEXT NOT NULL
     )
     """,
+    # Tabla de portfolios asociados a cada usuario
     """
     CREATE TABLE IF NOT EXISTS portfolios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,6 +41,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
     )
     """,
+    # Tabla de posiciones (activos) dentro de cada portfolio
     """
     CREATE TABLE IF NOT EXISTS positions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,6 +54,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         UNIQUE (portfolio_id, ticker)
     )
     """,
+    # Tabla de historial de valor total por portfolio y fecha
     """
     CREATE TABLE IF NOT EXISTS portfolio_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -50,11 +65,16 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         UNIQUE (portfolio_id, date)
     )
     """,
+    # Índices para optimizar las consultas más frecuentes
     "CREATE INDEX IF NOT EXISTS idx_portfolios_user_id ON portfolios (user_id)",
     "CREATE INDEX IF NOT EXISTS idx_positions_portfolio_id ON positions (portfolio_id)",
     "CREATE INDEX IF NOT EXISTS idx_history_portfolio_id_date ON portfolio_history (portfolio_id, date)",
 )
 
+
+# ------------------------------------------------------------
+# Funciones auxiliares de configuración de rutas
+# ------------------------------------------------------------
 
 def _timestamp() -> str:
     """Devuelve la marca temporal fija usada al sembrar datos demo."""
@@ -78,12 +98,16 @@ def ensure_generated_reports_directory() -> Path:
     return settings.generated_reports_dir
 
 
+# ------------------------------------------------------------
+# Funciones de conexión y esquema
+# ------------------------------------------------------------
+
 def get_connection(database_path: Path | None = None) -> sqlite3.Connection:
     """Abre una conexión SQLite con filas accesibles por nombre."""
     ensure_database_directory()
     connection = sqlite3.connect(database_path or get_database_path())
-    connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA foreign_keys = ON")
+    connection.row_factory = sqlite3.Row  # Permite acceder a columnas por nombre
+    connection.execute("PRAGMA foreign_keys = ON")  # Activar integridad referencial
     return connection
 
 
@@ -99,9 +123,13 @@ def reset_database(database_path: Path | None = None) -> Path:
     target = database_path or get_database_path()
     ensure_database_directory()
     if target.exists():
-        target.unlink()
+        target.unlink()  # Eliminar archivo SQLite del disco
     return target
 
+
+# ------------------------------------------------------------
+# Funciones de seed (datos iniciales)
+# ------------------------------------------------------------
 
 def is_seeded(connection: sqlite3.Connection) -> bool:
     """Comprueba si la base ya contiene usuarios cargados."""
@@ -110,17 +138,23 @@ def is_seeded(connection: sqlite3.Connection) -> bool:
 
 
 def seed_database(connection: sqlite3.Connection) -> bool:
-    """Inserta los datos ficticios iniciales cuando la base está vacía."""
+    """
+    Inserta los datos ficticios iniciales cuando la base está vacía.
+    Retorna True si se insertaron datos, False si ya estaban cargados.
+    """
     if is_seeded(connection):
         return False
 
     created_at = _timestamp()
     for user in build_seed_payload():
+        # Insertar usuario
         cursor = connection.execute(
             "INSERT INTO users (name, email, created_at) VALUES (?, ?, ?)",
             (user["name"], user["email"], created_at),
         )
         user_id = cursor.lastrowid
+
+        # Insertar portfolio del usuario
         portfolio = user["portfolio"]
         portfolio_cursor = connection.execute(
             "INSERT INTO portfolios (user_id, name, created_at) VALUES (?, ?, ?)",
@@ -128,29 +162,26 @@ def seed_database(connection: sqlite3.Connection) -> bool:
         )
         portfolio_id = portfolio_cursor.lastrowid
 
+        # Insertar posiciones del portfolio
         connection.executemany(
             """
             INSERT INTO positions (portfolio_id, ticker, asset_name, quantity, avg_price)
             VALUES (:portfolio_id, :ticker, :asset_name, :quantity, :avg_price)
             """,
             [
-                {
-                    "portfolio_id": portfolio_id,
-                    **position,
-                }
+                {"portfolio_id": portfolio_id, **position}
                 for position in portfolio["positions"]
             ],
         )
+
+        # Insertar historial de valores del portfolio
         connection.executemany(
             """
             INSERT INTO portfolio_history (portfolio_id, date, total_value)
             VALUES (:portfolio_id, :date, :total_value)
             """,
             [
-                {
-                    "portfolio_id": portfolio_id,
-                    **record,
-                }
+                {"portfolio_id": portfolio_id, **record}
                 for record in portfolio["history_records"]
             ],
         )
@@ -159,10 +190,14 @@ def seed_database(connection: sqlite3.Connection) -> bool:
     return True
 
 
+# ------------------------------------------------------------
+# Inicialización completa de la base de datos
+# ------------------------------------------------------------
+
 def initialize_database(reset: bool = False) -> dict[str, Any]:
     """Inicializa esquema, seed y validaciones básicas de la base."""
     if reset:
-        reset_database()
+        reset_database()  # Borrar base si se solicita reset completo
 
     with get_connection() as connection:
         create_schema(connection)
@@ -175,6 +210,10 @@ def initialize_database(reset: bool = False) -> dict[str, Any]:
         **verification,
     }
 
+
+# ------------------------------------------------------------
+# Consultas principales
+# ------------------------------------------------------------
 
 def get_table_counts(connection: sqlite3.Connection) -> dict[str, int]:
     """Cuenta los registros de cada tabla principal del modelo."""
@@ -288,10 +327,12 @@ def get_user_portfolios(
     filters: list[str] = []
     parameters: list[Any] = []
 
+    # Filtrar por email si se proporcionó
     if user_email is not None:
         filters.append("u.email = ?")
         parameters.append(user_email)
 
+    # Filtrar por ID si se proporcionó
     if user_id is not None:
         filters.append("u.id = ?")
         parameters.append(user_id)
@@ -405,11 +446,20 @@ def get_portfolio_positions(
     return connection.execute(query, parameters).fetchall()
 
 
+# ------------------------------------------------------------
+# Verificación de integridad de la base de datos
+# ------------------------------------------------------------
+
 def verify_database(connection: sqlite3.Connection) -> dict[str, Any]:
-    """Valida que la base sembrada tenga cobertura suficiente para la app."""
+    """
+    Valida que la base sembrada tenga cobertura suficiente para la app.
+    Verifica mínimos de usuarios, portfolios, posiciones e historial.
+    """
     counts = get_table_counts(connection)
     summaries = get_portfolio_summaries(connection)
     evolution_summaries = get_portfolio_evolution_summaries(connection)
+
+    # Verificar que se cumplen los mínimos requeridos por la aplicación
     is_functional = (
         counts["users"] >= 3
         and counts["portfolios"] >= 3
