@@ -157,3 +157,35 @@ Compara la distribución de pesos del portfolio actual del usuario frente a los 
 *   **Reflexión Personal:** *El desarrollo colaborativo me ha permitido comprender cómo integrar cálculos numéricos complejos de SciPy/NumPy en flujos visuales (Streamlit) y APIs (FastAPI) de forma estable y testeada.*
 
 *(Nota: Espacio reservado para los informes del resto de integrantes: Diana V., Darío R., Jimy A., José M., Johanna V. y Jhuliana T.)*
+
+---
+
+### Anexo B: Informe de Jimy Alexander Arias Vasco (UI Lead Developer — Streamlit)
+
+*   **Participación Específica:** Diseño e implementación completa de la pestaña Resumen (`ui/tab_overview.py`), módulo de gráficos reutilizables (`ui/charts.py`), generador PDF exclusivo del Resumen (`reports/resumen_pdf_generator.py`), motor de cartera (`domain/portfolio_engine.py`) y motor de rebalanceo (`domain/rebalance_engine.py`). Adicionalmente, corrección de bug de compatibilidad con PyArrow en `ui/tab_advisor.py` y migración de la API deprecada `use_container_width` en `app.py`, `ui/tab_evolution.py` y `ui/tab_reports.py`.
+
+*   **Funcionalidades Desarrolladas:**
+    *   **Pestaña Resumen completa** (`ui/tab_overview.py`, 436 líneas): 7 secciones visuales en orden — gráfico de Movimiento del Periodo, alerta de drawdown, 6 tarjetas KPI con HTML personalizado, tabla de rendimiento por horizonte (1/3/12 meses), 4 tarjetas de Rebalanceo HRP, gráficos de Evolución y Composición en columnas, tabla de Detalle de Posiciones con columna de Acción HRP y correlación promedio, Estado General y botón de descarga PDF.
+    *   **Módulo de gráficos reutilizables** (`ui/charts.py`): `build_waterfall_figure()` con curva suave interpolada mediante PchipInterpolator (SciPy), `build_area_figure()` con anotación del último punto, y `build_donut_figure()` como semicírculo con etiquetas externas por ticker. Todos con fondos transparentes (`fig.patch.set_alpha(0.0)`) para integrarse con cualquier color de fondo de la app.
+    *   **Generador PDF de Resumen** (`reports/resumen_pdf_generator.py`): independiente de `pdf_generator.py` de Johanna, sin importaciones cruzadas. Produce un informe acotado a lo que el usuario ve en la pestaña: indicadores clave, rendimiento por horizonte, resumen de rebalanceo y composición por activo. El nombre del archivo refleja el portafolio (`resumen_financiero_defensive_global_YYYYMMDD.pdf`), no el nombre de la persona.
+    *   **Motor de cartera** (`domain/portfolio_engine.py`): `build_portfolio_snapshot()` calcula valor actual, coste, peso y composición por activo y por portafolio. Incluye patrón defensivo `_empty_snapshot()` para usuarios sin posiciones.
+    *   **Motor de rebalanceo** (`domain/rebalance_engine.py`): clasifica cada activo como Aumentar / Reducir / Mantener comparando peso actual vs. peso objetivo HRP. Calcula `value_delta` en $ para cada posición y ordena la tabla por desviación absoluta descendente.
+
+*   **Evidencias de Commits** (usuario GitHub: `jimyarias-gif`):
+
+    | Commit | Fecha | Descripción | Archivos |
+    |--------|-------|-------------|----------|
+    | [`643a1ff`](https://github.com/dianavalencia379-ui/TRABAJO_FINAL_AUTOMATIZACION/commit/643a1ff246aef92de4a0003b67c23d5bf61534b2) | 20/06/2026 | feat: alerta drawdown, mejor/peor periodo y rebalanceo en Resumen | `tab_overview.py` +139 líneas |
+    | [`335b234`](https://github.com/dianavalencia379-ui/TRABAJO_FINAL_AUTOMATIZACION/commit/335b2346ca8ee5714ba56f02d86b76f09d21bd4f) | 21/06/2026 | Resumen: cascada, tarjetas HTML, fix histórico seed_data. Cartera: columnas HRP | `charts.py`, `tab_overview.py`, `tab_portfolio.py` +675 líneas |
+    | [`83f4a52`](https://github.com/dianavalencia379-ui/TRABAJO_FINAL_AUTOMATIZACION/commit/83f4a52a4a01f77b3f146849cdba8bb9b83e00cb) | 21/06/2026 | fix: crash pyarrow en diagnóstico HRP y migración `use_container_width` | `app.py`, `tab_advisor.py`, `tab_evolution.py`, `tab_reports.py` |
+    | [`74813db`](https://github.com/dianavalencia379-ui/TRABAJO_FINAL_AUTOMATIZACION/commit/74813dbe03e3bf1665c4f554ecade1af553ed70f) | 21/06/2026 | feat: rediseño visual Resumen completo y PDF acotado a la pestaña | `charts.py`, `tab_overview.py`, `resumen_pdf_generator.py` +295 líneas |
+
+    Integración mediante **PR #10** ([ver PR](https://github.com/dianavalencia379-ui/TRABAJO_FINAL_AUTOMATIZACION/pull/10)), fusionado a `develop` tras revisión del equipo.
+
+*   **Problemas y Soluciones:**
+    *   *Bug PyArrow en tabla de diagnóstico HRP*: tipos mixtos (int/str/float) en la columna "Valor" rompían la inferencia de tipos de Arrow al renderizar con `st.dataframe`. Solución: normalizar todos los valores a `str()` antes de construir el DataFrame.
+    *   *Inconsistencia de datos entre tarjeta KPI y gráfico de cascada*: "Valor Portafolio al Cierre" mostraba $20.347,10 mientras "Saldo Final" mostraba $52.923 para el mismo usuario. Causa raíz: la base de datos nunca fue regenerada tras el fix del rescale en `seed_data.py`. Solución: `python scripts/init_db.py --reset` (la bandera `--reset` es obligatoria; sin ella el script detecta que la DB existe y no hace nada).
+    *   *Archivo `config.toml` ignorado silenciosamente por Streamlit*: PowerShell crea archivos con UTF-8 con BOM. El parser TOML de Streamlit lanza `TomlDecodeError` internamente y arranca con valores por defecto sin avisar al usuario. Solución: guardar el archivo desde VS Code con "Save with Encoding → UTF-8 sin BOM". Una vez corregido, opciones como `backgroundColor`, `dataframeBorderColor` y `baseFontSize` funcionaron inmediatamente.
+    *   *Conflicto de merge al subir a `feature/streamlit-ui`*: el remoto tenía commits nuevos del equipo no integrados localmente. Se ejecutó `git fetch` para inspeccionar qué había cambiado (solo archivos de documentación, sin solapamiento), luego `git pull` para integrar y `git commit --no-edit` para cerrar el merge cuando la terminal se cerró accidentalmente mientras vim esperaba confirmación.
+
+*   **Reflexión Personal:** *El mayor aprendizaje fue que la coordinación técnica requiere tanta atención como el código mismo. Un archivo de configuración con codificación incorrecta puede hacer parecer que una funcionalidad no existe cuando en realidad funciona perfectamente — y encontrar esa causa raíz sin síntomas visibles fue más difícil que cualquier bug de lógica. La separación estricta de responsabilidades entre capas (los motores no conocen Streamlit, la interfaz no calcula, los gráficos no conocen los datos del negocio) fue la decisión de diseño que más valor aportó al trabajo colaborativo: cuando hubo que ajustar el estilo de la cascada, el cambio fue en un solo archivo sin tocar la lógica de la pestaña.*
