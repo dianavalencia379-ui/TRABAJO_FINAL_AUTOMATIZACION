@@ -156,4 +156,116 @@ Compara la distribución de pesos del portfolio actual del usuario frente a los 
 *   **Problemas y Soluciones:** Solución del fallo de importación `ModuleNotFoundError` al ejecutar scripts de inicialización, documentando el uso de `python -m scripts.init_db` en la guía oficial.
 *   **Reflexión Personal:** *El desarrollo colaborativo me ha permitido comprender cómo integrar cálculos numéricos complejos de SciPy/NumPy en flujos visuales (Streamlit) y APIs (FastAPI) de forma estable y testeada.*
 
-*(Nota: Espacio reservado para los informes del resto de integrantes: Diana V., Darío R., Jimy A., José M., Johanna V. y Jhuliana T.)*
+### Anexo B: Informe de Diana Marcela Valencia Garcia (Coordinadora, Release Manager & Editora)
+
+* **Participación Específica:** Coordinación técnica del proyecto, revisión del repositorio, gestión documental y apoyo en la validación del código, entorno y pruebas antes de la entrega final.
+
+* **Funcionalidades Desarrolladas:**
+
+  * Creación y mantenimiento de la documentación principal del proyecto en `README.md`, incluyendo descripción general, arquitectura, tecnologías, fases de trabajo y checklist de entrega.
+  * Revisión de la coherencia entre la memoria, el calendario de trabajo y la estructura real del repositorio.
+  * Participación en la configuración del entorno mediante ajustes en `.env.example`, `config.py` y documentación de dependencias.
+  * Actualización de datos de prueba en `data_layer/seed_data.py`, especialmente los asociados al usuario de demostración.
+  * Revisión de scripts de validación como `validate_hrp_engine.py` y `validate_rebalance_engine.py`.
+  * Apoyo en la comprobación de tests automatizados en `tests/`, verificando que la aplicación funcionara de forma integrada.
+  * Revisión de artefactos generados, como la base de datos local y los reportes PDF de demostración.
+
+* **Evidencias de Commits:** Commits firmados bajo el usuario `dianavalencia379-ui`, vinculados principalmente a documentación, configuración del entorno, datos semilla, scripts de validación, pruebas y revisión general del proyecto.
+
+* **Problemas y Soluciones:** Durante el desarrollo se detectaron desajustes entre documentación, entorno local, dependencias y pruebas. Diana participó en la revisión y corrección de estos puntos, ayudando a mantener la coherencia entre el código, los datos de prueba y la memoria final.
+
+* **Reflexión Personal:** *Mi participación me ha permitido comprender la importancia de la coordinación técnica en un proyecto colaborativo. Además de organizar el trabajo y revisar la documentación final, he podido participar en la validación del entorno, los datos de prueba y los tests, asegurando que el proyecto entregado fuera coherente y funcional.*
+
+### Anexo C: Informe de Darío Ruiz Abrante (Backend & Testing Developer)
+
+* **Participación Específica:** Desarrollo backend, persistencia de datos, validación de motores principales y pruebas automatizadas del sistema.
+
+* **Funcionalidades Desarrolladas:**
+
+  * Diseño inicial de la base de datos SQLite y scripts de inicialización del proyecto.
+  * Implementación y revisión del esquema de datos en `data_layer/db.py`.
+  * Desarrollo de datos de prueba y validaciones asociadas a los motores de cartera y evolución.
+  * Apoyo en el desarrollo del motor de cartera básico (`portfolio_engine.py`), calculando posiciones, valores y pesos actuales.
+  * Incorporación y posterior ajuste de restricciones de integridad en SQLite.
+  * Desarrollo y revisión de pruebas automatizadas con Pytest para validar la lógica principal del proyecto.
+  * Participación en la comprobación de motores financieros, incluyendo validaciones del HRP y del rebalanceo.
+
+* **Evidencias de Commits:** Commits firmados bajo el usuario `darioruiz1725-ai`, vinculados a la configuración inicial de base de datos, scripts de validación, restricciones SQLite, pruebas y mejoras de lógica financiera.
+
+* **Problemas y Soluciones:** Durante el desarrollo se detectó que algunas restricciones de SQLite podían generar conflictos con la evolución del esquema. Darío participó en la incorporación, revisión y reversión de dichas restricciones, priorizando la estabilidad de la base de datos y la compatibilidad con los tests.
+
+* **Reflexión Personal:** *Mi participación me ha permitido comprender la importancia de una base de datos bien estructurada y de una batería de pruebas fiable en un proyecto financiero. El uso de SQLite, scripts de validación y Pytest ha sido clave para asegurar que la aplicación funcionara de forma estable antes de la entrega.*
+
+### Anexo D: Informe de Jimy Alexander Arias Vasco (UI Lead Developer - Streamlit)
+
+* **Participación Específica:** Desarrollo de la interfaz principal en Streamlit, mejora de la experiencia de usuario y apoyo en la integración visual del dashboard.
+
+* **Funcionalidades Desarrolladas:**
+
+  * Desarrollo y mejora de la estructura visual de la aplicación en Streamlit.
+  * Participación en la pestaña de resumen ejecutivo, incorporando métricas más claras para el usuario.
+  * Rediseño de elementos visuales mediante tarjetas HTML, avisos y presentación más ordenada de resultados.
+  * Mejora de la visualización de drawdown, mejor/peor periodo y métricas de rebalanceo.
+  * Apoyo en la integración de información financiera dentro de la interfaz, evitando que los resultados aparecieran como tablas crudas.
+  * Participación en ajustes de compatibilidad visual y correcciones de presentación en la aplicación.
+
+* **Evidencias de Commits:** Participación visible bajo el usuario `jimyarias-gif` en la rama `feature/streamlit-ui`, con aportaciones relacionadas con rediseño visual, alertas de drawdown, tarjetas de resumen y mejoras de UX. También aparece participación posterior en una rama de automatización API para exponer una URL pública de descarga del PDF.
+
+* **Problemas y Soluciones:** Uno de los principales retos fue transformar los resultados financieros en una interfaz entendible para un usuario no técnico. Para solucionarlo, se sustituyeron salidas demasiado tabulares por tarjetas, indicadores y mensajes visuales más claros.
+
+* **Reflexión Personal:** *El desarrollo de la interfaz me ha permitido comprender cómo traducir cálculos financieros complejos en una experiencia visual clara y usable. La parte más importante ha sido conseguir que el usuario pudiera interpretar rápidamente el estado de su cartera, los riesgos y las recomendaciones de rebalanceo.*
+
+### Anexo E: Informe de José Luis Martínez Pardo (Interactive UI Developer - Plotly)
+
+* **Participación Específica:** Desarrollo de componentes interactivos de interfaz, apoyo en visualización de datos financieros y ajustes de dependencias necesarias para la representación gráfica.
+
+* **Funcionalidades Desarrolladas:**
+
+  * Modificación y mejora de la pestaña de portfolio (`tab_portfolio.py`).
+  * Revisión de la pestaña de asesor financiero (`tab_advisor.py`), vinculada a la presentación de pesos actuales, pesos HRP y recomendaciones.
+  * Actualización de `requirements.txt` para asegurar que las librerías necesarias para visualización estuvieran incluidas.
+  * Apoyo en la integración de gráficos y elementos interactivos para representar la composición y evolución de la cartera.
+  * Revisión de la coherencia visual entre los resultados del motor financiero y la presentación final en Streamlit.
+
+* **Evidencias de Commits:** Commits firmados bajo el usuario `josemartinezpardo1-design`, asociados a cambios en `tab_portfolio.py`, `tab_advisor.py` y `requirements.txt`.
+
+* **Problemas y Soluciones:** Durante el desarrollo fue necesario ajustar la presentación de los datos financieros para que los resultados del portfolio y del asesor HRP fueran comprensibles. José contribuyó a mejorar la estructura visual y a revisar las dependencias necesarias para que los gráficos y componentes interactivos funcionaran correctamente.
+
+* **Reflexión Personal:** *Mi participación me ha permitido profundizar en la importancia de la visualización interactiva dentro de una aplicación financiera. No basta con calcular correctamente los datos: también es necesario presentarlos de forma clara, ordenada y útil para que el usuario pueda tomar decisiones.*
+
+### Anexo F: Informe de Johanna Valencia Rozo (PDF Report Specialist - ReportLab)
+
+* **Participación Específica:** Apoyo en la generación de informes PDF, revisión de salidas documentales y colaboración en la integración de resultados financieros dentro del reporte final.
+
+* **Funcionalidades Desarrolladas:**
+
+  * Participación en la fase de informes PDF mediante ReportLab.
+  * Revisión del formato de salida del informe financiero generado automáticamente.
+  * Apoyo en la inclusión de información de cartera, evolución histórica, pesos HRP y recomendaciones de rebalanceo dentro del reporte.
+  * Colaboración en la comprobación de que los informes fueran útiles como entregable académico y como salida automatizable.
+  * Apoyo puntual en la revisión del motor HRP y de la coherencia de los resultados mostrados en los informes.
+
+* **Evidencias de Commits:** Commits firmados bajo el usuario `johannarozo`, con aportaciones visibles en el historial del repositorio. Aunque los mensajes de commit son poco descriptivos, su rol queda asociado en la memoria y el calendario a la fase de generación de informes PDF mediante ReportLab.
+
+* **Problemas y Soluciones:** Uno de los retos principales fue convertir los resultados de la aplicación en un documento PDF claro y presentable. Johanna participó en la revisión de la estructura del informe, asegurando que la salida generada incluyera la información financiera relevante y pudiera integrarse en el flujo de automatización.
+
+* **Reflexión Personal:** *Mi participación me ha permitido comprender la importancia de los informes automáticos dentro de un proyecto financiero. La generación del PDF permite que los resultados del dashboard no se queden solo en la aplicación, sino que puedan entregarse, almacenarse o enviarse automáticamente al usuario final.*
+
+### Anexo G: Informe de Jhuliana Tuesta Pintado (API & Automation Engineer - FastAPI)
+
+* **Participación Específica:** Desarrollo y documentación de la API del proyecto, integración con herramientas externas y diseño del flujo de automatización para la generación periódica de informes.
+
+* **Funcionalidades Desarrolladas:**
+
+  * Participación en el desarrollo del servidor FastAPI (`api.py`) para exponer endpoints de generación de informes.
+  * Definición del endpoint principal de reporte, orientado a generar el PDF financiero de un usuario concreto.
+  * Apoyo en la integración entre la API, la base de datos y el generador de informes PDF.
+  * Diseño del flujo de automatización trimestral mediante herramientas externas como Zapier o Make.
+  * Documentación del proceso: llamada HTTP a la API, generación del PDF y envío automático del informe por correo.
+  * Revisión de la compatibilidad del flujo de automatización con la estructura final del proyecto.
+
+* **Evidencias de Commits:** Su participación queda documentada en la memoria y en el calendario de trabajo como responsable de API y automatización. En el historial público revisado no aparece un usuario de GitHub claramente identificable con su nombre, por lo que su contribución se refleja como participación funcional dentro del módulo `api.py` y la documentación del flujo Zapier/Make.
+
+* **Problemas y Soluciones:** El principal reto fue plantear una automatización externa realista para un proyecto ejecutado en local. Para resolverlo, se diseñó un flujo basado en una petición HTTP desde Zapier o Make hacia FastAPI, con generación del PDF y posterior envío del informe como adjunto.
+
+* **Reflexión Personal:** *Mi participación me ha permitido comprender cómo una aplicación financiera puede conectarse con herramientas externas de automatización. La integración con FastAPI, Zapier o Make demuestra cómo los informes pueden generarse de forma periódica sin intervención manual, acercando el proyecto a un caso de uso real.*
