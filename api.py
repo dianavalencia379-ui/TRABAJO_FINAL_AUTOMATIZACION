@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import base64
 from datetime import UTC, datetime
 import json
 from typing import Any
@@ -327,6 +328,18 @@ def _build_zapier_payload(
     report: Any,
 ) -> dict[str, Any]:
     """Construye el payload que luego consumira Zapier."""
+    pdf_payload = pdf.model_dump()
+    pdf_payload.update(
+        {
+            "file_name": report.file_name,
+            "mime_type": "application/pdf",
+            "size_bytes": len(report.content),
+            "encoding": "base64",
+            "content_base64": base64.b64encode(report.content).decode("ascii"),
+            "public_download_url": pdf.download_url if settings.public_api_base_url else None,
+        }
+    )
+
     return {
         "event": "user_report_generated",
         "trigger_source": "manual_debug",
@@ -338,10 +351,7 @@ def _build_zapier_payload(
             "email": str(selected_user_data["user_email"]),
         },
         "portfolio": portfolio.model_dump(),
-        "pdf": {
-            **pdf.model_dump(),
-            "public_download_url": pdf.download_url if settings.public_api_base_url else None,
-        },
+        "pdf": pdf_payload,
         "report": {
             "sections": list(report.sections),
             "warnings": list(report.warnings),

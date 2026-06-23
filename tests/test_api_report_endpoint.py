@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -226,6 +227,11 @@ def test_zapier_debug_report_posts_to_default_webhook_when_missing_config(
     assert payload["delivery"]["http_status"] == 200
     assert payload["pdf"]["download_url"] == "https://api.example.com/report-files/informe_test.pdf"
     assert payload["zapier_payload"]["pdf"]["public_download_url"] == payload["pdf"]["download_url"]
+    assert payload["zapier_payload"]["pdf"]["file_name"] == "informe_test.pdf"
+    assert payload["zapier_payload"]["pdf"]["mime_type"] == "application/pdf"
+    assert payload["zapier_payload"]["pdf"]["size_bytes"] == len(b"%PDF-1.4\nmock")
+    assert payload["zapier_payload"]["pdf"]["encoding"] == "base64"
+    assert payload["zapier_payload"]["pdf"]["content_base64"] == base64.b64encode(b"%PDF-1.4\nmock").decode("ascii")
     assert captured["timeout"] == 10
     assert captured["url"] == "https://hooks.zapier.com/hooks/catch/27964672/42twvzz/"
     assert '"requested_user_id": 1' in str(captured["body"])
@@ -291,6 +297,9 @@ def test_zapier_debug_report_posts_to_configured_webhook(tmp_path: Path, monkeyp
     assert payload["status"] == "sent"
     assert payload["delivery"]["mode"] == "webhook_sent"
     assert payload["delivery"]["http_status"] == 200
+    assert payload["zapier_payload"]["pdf"]["mime_type"] == "application/pdf"
+    assert payload["zapier_payload"]["pdf"]["encoding"] == "base64"
+    assert payload["zapier_payload"]["pdf"]["content_base64"] == base64.b64encode(b"%PDF-1.4\nmock").decode("ascii")
     assert captured["timeout"] == 10
     assert captured["url"] == "https://hooks.zapier.com/hooks/catch/123/abc"
     assert '"requested_user_id": 1' in str(captured["body"])
