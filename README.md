@@ -250,20 +250,43 @@ informes automatizados trimestrales
 
   *9.4. Base local para Zapier (implementada)*
 
-      Variables de entorno disponibles para la integración:
-      `ZAPIER_WEBHOOK_URL` webhook Catch Hook opcional; si falta, la API usa por defecto `https://hooks.zapier.com/hooks/catch/27964672/42twvzz/`.
-      `PUBLIC_API_BASE_URL` base pública de la API para construir `download_url` absolutos del PDF.
-      `ZAPIER_REPORT_INTERVAL_SECONDS` intervalo del temporizador interno en segundos; por defecto usa `7776000` (90 días). Para verificar rápido puede ajustarse temporalmente, por ejemplo `10`.
+```
+  Variables de entorno disponibles para la integración:
+  `ZAPIER_WEBHOOK_URL` webhook Catch Hook opcional; si falta, la API usa por defecto `https://hooks.zapier.com/hooks/catch/27964672/42twvzz/`.
+  `PUBLIC_API_BASE_URL` base pública de la API para construir `download_url` absolutos del PDF.
+  `ZAPIER_REPORT_INTERVAL_SECONDS` intervalo del temporizador interno en segundos; por defecto usa `7776000` (90 días). Para verificar rápido puede ajustarse temporalmente, por ejemplo `10`.
 
-      Endpoint manual de prueba:
-      `POST /api/zapier/debug/report?user_id=1`
+  Endpoint manual de prueba:
+  `POST /api/zapier/debug/report?user_id=1`
 
-       Comportamiento:
-       - Si `ZAPIER_WEBHOOK_URL` no está configurado, la API usa el webhook por defecto en código y envía el payload real.
-       - Si `ZAPIER_WEBHOOK_URL` existe, la API mantiene prioridad y envía el JSON a ese webhook.
-       - Si se deja `ZAPIER_WEBHOOK_URL` vacío explícitamente, la API devuelve un `preview` con el payload que Zapier recibiría.
-       - El flujo reutiliza la generación PDF actual por usuario y mantiene `POST /api/report/{user_id}` como endpoint principal de generación.
-       - Al arrancar la API se arma un temporizador en memoria; si el intervalo es muy largo se espera por tramos mas cortos para evitar el `OverflowError` de `threading.Timer` en Windows, y al completar el intervalo dispara el flujo Zapier existente para todos los usuarios actuales y vuelve a programarse desde ese momento.
+  Paso intermedio con ngrok para pruebas locales:
+  Como la API se ejecuta en local mediante FastAPI, Zapier no puede acceder directamente a una ruta como `http://localhost:8000`. Para resolverlo se utiliza ngrok como túnel público temporal entre internet y la API local. El flujo queda así:
+
+  FastAPI local `http://localhost:8000`
+  → ngrok genera una URL pública temporal
+  → `PUBLIC_API_BASE_URL` se configura con esa URL pública
+  → la API construye `pdf.public_download_url`
+  → Zapier usa esa URL pública para adjuntar el PDF al email.
+
+  Ejemplo de ejecución local:
+  `ngrok http 8000`
+
+  Ejemplo de variable de entorno resultante:
+  `PUBLIC_API_BASE_URL=https://connected-pouch-tuesday.ngrok-free.dev`
+
+  Con esta configuración, el PDF generado localmente queda accesible para Zapier mediante una URL completa como:
+  `https://connected-pouch-tuesday.ngrok-free.dev/report-files/informe_dvalenciag_student_universidadviu_com_20260623.pdf`
+
+   Comportamiento:
+   - Si `ZAPIER_WEBHOOK_URL` no está configurado, la API usa el webhook por defecto en código y envía el payload real.
+   - Si `ZAPIER_WEBHOOK_URL` existe, la API mantiene prioridad y envía el JSON a ese webhook.
+   - Si se deja `ZAPIER_WEBHOOK_URL` vacío explícitamente, la API devuelve un `preview` con el payload que Zapier recibiría.
+   - Si `PUBLIC_API_BASE_URL` está configurado, la API construye `public_download_url` con una URL pública completa del PDF generado.
+   - En pruebas locales, `PUBLIC_API_BASE_URL` debe apuntar a la URL pública generada por ngrok, manteniendo abiertas tanto la terminal de FastAPI como la de ngrok.
+   - El flujo reutiliza la generación PDF actual por usuario y mantiene `POST /api/report/{user_id}` como endpoint principal de generación.
+   - Al arrancar la API se arma un temporizador en memoria; si el intervalo es muy largo se espera por tramos mas cortos para evitar el `OverflowError` de `threading.Timer` en Windows, y al completar el intervalo dispara el flujo Zapier existente para todos los usuarios actuales y vuelve a programarse desde ese momento.
+```
+
 
 **10. Datos ficticios de demostración**
 
