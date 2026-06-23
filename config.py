@@ -1,3 +1,9 @@
+# ============================================================
+# config.py — Configuración global del proyecto
+# Dashboard Financiero. Carga variables de entorno y del
+# archivo .env para construir un objeto Settings inmutable.
+# ============================================================
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -5,6 +11,10 @@ import os
 from pathlib import Path
 from typing import Mapping
 
+
+# ------------------------------------------------------------
+# Funciones auxiliares para carga de configuración
+# ------------------------------------------------------------
 
 def _strip_optional_quotes(value: str) -> str:
     """Elimina comillas envolventes opcionales de un valor de configuración."""
@@ -14,16 +24,22 @@ def _strip_optional_quotes(value: str) -> str:
 
 
 def _load_dotenv(env_file: Path) -> dict[str, str]:
-    """Carga pares clave-valor simples desde un archivo .env."""
+    """
+    Carga pares clave-valor simples desde un archivo .env.
+    Ignora líneas vacías, comentarios y líneas sin signo '='.
+    """
     if not env_file.exists():
         return {}
 
     loaded: dict[str, str] = {}
     for raw_line in env_file.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
+
+        # Ignorar líneas vacías, comentarios y líneas sin '='
         if not line or line.startswith("#") or "=" not in line:
             continue
 
+        # Separar clave y valor en el primer '=' encontrado
         key, value = line.split("=", 1)
         key = key.strip().removeprefix("export ").strip()
         if not key:
@@ -41,7 +57,12 @@ def _get_env_value(
     dotenv_values: Mapping[str, str],
     default: str,
 ) -> str:
-    """Obtiene una variable priorizando el entorno sobre el archivo .env."""
+    """
+    Obtiene una variable de configuración priorizando:
+    1. Variables de entorno del sistema (environ)
+    2. Archivo .env (dotenv_values)
+    3. Valor por defecto (default)
+    """
     value = environ.get(name)
     if value is not None:
         return value
@@ -54,34 +75,50 @@ def _get_first_secret(
     environ: Mapping[str, str],
     dotenv_values: Mapping[str, str],
 ) -> tuple[str | None, str | None]:
-    """Devuelve el primer secreto disponible junto con el nombre de su variable."""
+    """
+    Busca el primer secreto disponible entre los nombres indicados.
+    Primero busca en variables de entorno, luego en el archivo .env.
+    Devuelve el valor encontrado y el nombre de su variable.
+    """
+    # Buscar primero en variables de entorno del sistema
     for name in names:
         value = environ.get(name)
         if value:
             return value, name
 
+    # Buscar luego en el archivo .env
     for name in names:
         value = dotenv_values.get(name)
         if value:
             return value, name
 
+    # No se encontró ningún secreto
     return None, None
 
 
+# ------------------------------------------------------------
+# Clase principal de configuración (inmutable)
+# ------------------------------------------------------------
+
 @dataclass(frozen=True)
 class Settings:
-    app_name: str = "Dashboard_Financiero"
-    environment: str = "development"
-    database_name: str = "dashboard_financiero.db"
-    data_dirname: str = "data"
-    reports_dirname: str = "reports"
-    generated_reports_dirname: str = "generated_reports"
-    api_key: str | None = field(default=None, repr=False)
-    api_key_env_name: str | None = None
+    """
+    Objeto de configuración inmutable del proyecto.
+    Todos los valores se cargan al inicio y no pueden modificarse
+    en tiempo de ejecución (frozen=True).
+    """
+    app_name: str = "Dashboard_Financiero"          # Nombre de la aplicación
+    environment: str = "development"                 # Entorno: development / production
+    database_name: str = "dashboard_financiero.db"  # Nombre del archivo SQLite
+    data_dirname: str = "data"                       # Carpeta de datos
+    reports_dirname: str = "reports"                 # Carpeta de reportes
+    generated_reports_dirname: str = "generated_reports"  # Subcarpeta de PDFs generados
+    api_key: str | None = field(default=None, repr=False)  # API key (oculta en repr)
+    api_key_env_name: str | None = None              # Nombre de la variable de la API key
 
     @property
     def base_dir(self) -> Path:
-        """Devuelve la carpeta base del proyecto."""
+        """Devuelve la carpeta base del proyecto (donde está config.py)."""
         return Path(__file__).resolve().parent
 
     @property
@@ -110,7 +147,10 @@ class Settings:
         return bool(self.api_key)
 
     def require_api_key(self) -> str:
-        """Entrega la API key obligatoria o lanza un error descriptivo."""
+        """
+        Entrega la API key obligatoria.
+        Lanza RuntimeError si no está configurada.
+        """
         if self.api_key:
             return self.api_key
 
@@ -120,16 +160,26 @@ class Settings:
         )
 
 
+# ------------------------------------------------------------
+# Constructor de Settings
+# ------------------------------------------------------------
+
 def build_settings(
     *,
     base_dir: Path | None = None,
     environ: Mapping[str, str] | None = None,
 ) -> Settings:
-    """Construye la configuración efectiva a partir del entorno y .env."""
+    """
+    Construye la configuración efectiva a partir del entorno y .env.
+    Permite inyectar base_dir y environ para facilitar pruebas unitarias.
+    """
     resolved_base_dir = base_dir or Path(__file__).resolve().parent
     resolved_environ = os.environ if environ is None else environ
+
+    # Cargar variables del archivo .env si existe
     dotenv_values = _load_dotenv(resolved_base_dir / ".env")
 
+    # Determinar el nombre de la variable de entorno que contiene la API key
     configured_api_key_name = _get_env_value(
         "API_KEY_ENV_VAR",
         environ=resolved_environ,
@@ -137,6 +187,7 @@ def build_settings(
         default="DASHBOARD_API_KEY",
     ).strip() or "DASHBOARD_API_KEY"
 
+    # Buscar la API key entre los nombres conocidos de variables de secretos
     api_key, api_key_env_name = _get_first_secret(
         (
             configured_api_key_name,
@@ -150,6 +201,7 @@ def build_settings(
         dotenv_values=dotenv_values,
     )
 
+    # Construir y retornar el objeto Settings con todos los valores resueltos
     return Settings(
         app_name=_get_env_value(
             "APP_NAME",
@@ -192,4 +244,8 @@ def build_settings(
     )
 
 
+# ------------------------------------------------------------
+# Instancia global de configuración
+# Se importa desde otros módulos con: from config import settings
+# ------------------------------------------------------------
 settings = build_settings()
