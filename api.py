@@ -107,13 +107,13 @@ def _build_dashboard_data(*, user_email: str) -> dict[str, Any]:
         hrp_snapshot = build_hrp_portfolio_snapshot(
             connection=connection,
             user_email=user_email,
-            prefer_live_data=True,
+            prefer_live_data=False,
         )
         advisor_snapshot = build_rebalance_advisor_snapshot(
             connection=connection,
             user_email=user_email,
             rebalance_threshold=3,
-            prefer_live_data=True,
+            prefer_live_data=False,
             portfolio_snapshot=portfolio_snapshot,
             hrp_snapshot=hrp_snapshot,
         )
