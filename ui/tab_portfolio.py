@@ -1,3 +1,9 @@
+# ============================================================
+# ui/tab_portfolio.py — Pestaña Portfolio
+# Muestra composición, análisis de concentración y detalle
+# completo de posiciones del portfolio del usuario.
+# ============================================================
+
 from __future__ import annotations
 
 from typing import Any
@@ -7,20 +13,25 @@ import plotly.express as px
 import streamlit as st
 
 
+# Emojis de acción HRP para visualización rápida en la tabla
 _ACTION_EMOJI = {"increase": "🟢", "reduce": "🔴", "hold": "⚪"}
 
 
 def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, Any]) -> None:
-    """Presenta la composición y el detalle completo del portfolio.
+    """
+    Presenta la composición y el detalle completo del portfolio.
 
-    Además de mostrar la composición, esta versión agrega análisis de
-    concentración (HHI), un filtro interactivo, y una columna de Acción
-    HRP cruzada desde el motor de rebalanceo.
+    Incluye:
+      - Análisis de concentración (índice HHI)
+      - Gráficos de composición por activo y por portfolio
+      - Filtro interactivo de posiciones
+      - Columna de Acción HRP cruzada desde el motor de rebalanceo
     """
     if not selected_user:
         st.info("Selecciona un usuario para explorar el portfolio.")
         return
 
+    # Extraer datos necesarios de los snapshots
     portfolio_snapshot = dashboard_data["portfolio_snapshot"]
     advisor_snapshot = dashboard_data.get("advisor_snapshot", {})
     user_portfolios = dashboard_data.get("user_portfolios", [])
@@ -29,11 +40,19 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     summary = portfolio_snapshot.get("portfolio_summary", {})
     advisor_table = advisor_snapshot.get("advisor_table", [])
 
-    # --- Indicador de concentración Herfindahl-Hirschman Index, HHI ---
+    # ------------------------------------------------------------
+    # Cálculo del índice de concentración HHI
+    # (Herfindahl-Hirschman Index: suma de pesos al cuadrado)
+    # Rango: 0 (diversificado) a 1 (concentrado en un solo activo)
+    # ------------------------------------------------------------
     weights = [float(item.get("weight_pct", 0.0)) / 100.0 for item in asset_rows]
     hhi = sum(weight**2 for weight in weights) if weights else 0.0
+
+    # Posiciones equivalentes: cuántas posiciones igualmente ponderadas
+    # representan la diversificación real del portfolio (= 1/HHI)
     effective_positions = (1.0 / hhi) if hhi > 0 else 0.0
 
+    # Clasificar nivel de concentración según umbrales estándar
     if hhi == 0.0:
         concentration_label = "n/d"
     elif hhi < 0.15:
@@ -43,6 +62,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     else:
         concentration_label = "Alta"
 
+    # Métricas resumen en 4 columnas
     top_metric_columns = st.columns(4)
     top_metric_columns[0].metric(
         "💰 Capital estimado",
@@ -71,10 +91,10 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         ),
     )
 
+    # Alerta si algún activo supera el 30% del portfolio
     if asset_rows:
         top_asset = max(asset_rows, key=lambda item: item.get("weight_pct", 0.0))
         top_weight = float(top_asset.get("weight_pct", 0.0))
-
         if top_weight >= 30.0:
             st.warning(
                 f"⚠️ Concentración alta en un solo activo: "
@@ -84,6 +104,9 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
 
     st.divider()
 
+    # ------------------------------------------------------------
+    # Tabla de portfolios del usuario
+    # ------------------------------------------------------------
     if user_portfolios:
         st.subheader("🗂️ Portfolio(s) del usuario")
 
@@ -105,6 +128,9 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
             },
         )
 
+    # ------------------------------------------------------------
+    # Gráficos de composición: por activo y por portfolio
+    # ------------------------------------------------------------
     composition_columns = st.columns(2)
 
     with composition_columns[0]:
@@ -113,6 +139,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         if asset_rows:
             asset_frame = pd.DataFrame(asset_rows)
 
+            # Gráfico de donut con porcentaje y etiqueta por activo
             pie_chart = px.pie(
                 asset_frame,
                 names="label",
@@ -125,7 +152,6 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
                 margin=dict(t=10, b=10, l=10, r=10),
                 legend_title_text="Activo",
             )
-
             st.plotly_chart(pie_chart, use_container_width=True)
         else:
             st.info("Sin composición por activo disponible.")
@@ -136,6 +162,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         if portfolio_rows:
             portfolio_frame = pd.DataFrame(portfolio_rows)
 
+            # Gráfico de barras con valor por portfolio
             bar_chart = px.bar(
                 portfolio_frame,
                 x="label",
@@ -147,13 +174,15 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
                 yaxis_title="Valor ($)",
                 margin=dict(t=10, b=10, l=10, r=10),
             )
-
             st.plotly_chart(bar_chart, use_container_width=True)
         else:
             st.info("Sin composición por portfolio disponible.")
 
     st.divider()
 
+    # ------------------------------------------------------------
+    # Tabla detallada de posiciones con filtro y acción HRP
+    # ------------------------------------------------------------
     st.subheader("📌 Detalle de posiciones")
 
     positions = portfolio_snapshot.get("positions_table", [])
@@ -161,13 +190,14 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         st.warning("El usuario no tiene posiciones cargadas en la base de datos.")
         return
 
+    # Campo de búsqueda para filtrar por ticker o nombre de activo
     search_term = st.text_input(
         "🔎 Buscar por ticker o nombre de activo",
         value="",
         placeholder="Ej: AAPL, Visa, Johnson...",
     )
 
-    # --- Cruce con la recomendación del motor de rebalanceo ---
+    # Construir diccionario de acciones HRP por ticker para cruce con posiciones
     action_by_ticker = {
         item["ticker"]: (
             f"{_ACTION_EMOJI.get(item.get('action'), '⚪')} "
@@ -177,6 +207,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         if "ticker" in item
     }
 
+    # Renombrar columnas para visualización
     positions_frame = pd.DataFrame(positions).rename(
         columns={
             "portfolio_name": "Portfolio",
@@ -191,10 +222,12 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         }
     )
 
+    # Agregar columna de acción HRP cruzada desde el advisor
     positions_frame["Acción HRP"] = (
         positions_frame["Ticker"].map(action_by_ticker).fillna("n/d")
     )
 
+    # Aplicar filtro de búsqueda si el usuario escribió algo
     if search_term:
         mask = (
             positions_frame["Ticker"].astype(str).str.contains(search_term, case=False, na=False)
@@ -202,17 +235,11 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
         )
         positions_frame = positions_frame[mask]
 
+    # Columnas a mostrar en la tabla final
     display_columns = [
-        "Portfolio",
-        "Ticker",
-        "Activo",
-        "Acción HRP",
-        "Cantidad",
-        "Precio medio",
-        "Precio actual",
-        "Coste",
-        "Valor actual",
-        "Peso (%)",
+        "Portfolio", "Ticker", "Activo", "Acción HRP",
+        "Cantidad", "Precio medio", "Precio actual",
+        "Coste", "Valor actual", "Peso (%)",
     ]
 
     if positions_frame.empty:
@@ -220,7 +247,7 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
     else:
         display_frame = positions_frame[display_columns].copy()
 
-        # --- Fila de totales ---
+        # Agregar fila de totales al final de la tabla
         totals_row: dict[str, Any] = {
             "Portfolio": "",
             "Ticker": "TOTAL",
@@ -244,10 +271,10 @@ def render(*, selected_user: dict[str, Any] | None, dashboard_data: dict[str, An
             width="stretch",
             hide_index=True,
             column_config={
-                "Precio medio": st.column_config.NumberColumn(format="$%.2f"),
+                "Precio medio":  st.column_config.NumberColumn(format="$%.2f"),
                 "Precio actual": st.column_config.NumberColumn(format="$%.2f"),
-                "Coste": st.column_config.NumberColumn(format="$%.2f"),
-                "Valor actual": st.column_config.NumberColumn(format="$%.2f"),
-                "Peso (%)": st.column_config.NumberColumn(format="%.2f%%"),
+                "Coste":         st.column_config.NumberColumn(format="$%.2f"),
+                "Valor actual":  st.column_config.NumberColumn(format="$%.2f"),
+                "Peso (%)":      st.column_config.NumberColumn(format="%.2f%%"),
             },
         )
