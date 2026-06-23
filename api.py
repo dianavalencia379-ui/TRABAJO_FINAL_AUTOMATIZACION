@@ -6,7 +6,10 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+import json
 from typing import Any
+from urllib import error, request
 
 # Framework principal para construir la API REST
 from fastapi import FastAPI, status
@@ -83,6 +86,30 @@ class ReportGenerationResponse(BaseModel):
     pdf: ReportPdfResponse               # Datos del PDF generado
     warnings: list[str] = Field(default_factory=list)  # Advertencias opcionales
     sections: list[str] = Field(default_factory=list)  # Secciones incluidas en el reporte
+
+
+class ZapierDeliveryResponse(BaseModel):
+    """Resultado del intento de entrega hacia Zapier."""
+    mode: str
+    webhook_configured: bool
+    target_url: str | None = None
+    attempted_at: str
+    delivered_at: str | None = None
+    http_status: int | None = None
+    response_excerpt: str | None = None
+
+
+class ZapierDebugResponse(BaseModel):
+    """Respuesta del endpoint manual para previsualizar o enviar a Zapier."""
+    status: str
+    message: str
+    user: ReportUserResponse
+    portfolio: ReportPortfolioResponse
+    pdf: ReportPdfResponse
+    zapier_payload: dict[str, Any]
+    delivery: ZapierDeliveryResponse
+    warnings: list[str] = Field(default_factory=list)
+    sections: list[str] = Field(default_factory=list)
 
 
 # ------------------------------------------------------------
@@ -186,6 +213,206 @@ def _build_relative_report_path(file_path: str) -> str:
         return target_path.as_posix()  # Fallback: retornar ruta absoluta
 
 
+def _build_download_url(file_name: str) -> str:
+    """Construye la URL de descarga, absoluta si existe base pública."""
+    relative_url = f"/report-files/{file_name}"
+    if settings.public_api_base_url:
+        return f"{settings.public_api_base_url}{relative_url}"
+    return relative_url
+
+
+def _build_portfolio_response(
+    *,
+    dashboard_data: dict[str, Any],
+    user_portfolios: list[dict[str, Any]],
+) -> ReportPortfolioResponse:
+    """Normaliza el resumen de portfolio usado por ambos endpoints."""
+    portfolio_summary = dashboard_data["portfolio_snapshot"].get("portfolio_summary", {})
+    return ReportPortfolioResponse(
+        portfolio_count=int(portfolio_summary.get("portfolio_count", 0) or 0),
+        position_count=int(portfolio_summary.get("position_count", 0) or 0),
+        total_current_value=float(portfolio_summary.get("total_current_value", 0.0) or 0.0),
+        total_cost_basis=float(portfolio_summary.get("total_cost_basis", 0.0) or 0.0),
+        primary_portfolio=(
+            str(user_portfolios[0].get("portfolio_name"))
+            if user_portfolios
+            else None
+        ),
+    )
+
+
+def _prepare_report_artifacts(user_id: int) -> tuple[
+    dict[str, Any],
+    dict[str, Any],
+    Any,
+    Any,
+    list[dict[str, Any]],
+]:
+    """Reutiliza el flujo actual de generación PDF y devuelve sus artefactos."""
+    try:
+        initialize_database(reset=False)
+    except Exception as exc:
+        raise RuntimeError(
+            json.dumps(
+                {
+                    "http_status": status.HTTP_503_SERVICE_UNAVAILABLE,
+                    "code": "database_unavailable",
+                    "message": f"No fue posible inicializar o abrir la base de datos: {exc}",
+                    "extra": {"database_path": str(settings.database_path)},
+                }
+            )
+        ) from exc
+
+    with get_connection() as connection:
+        selected_user = get_user_by_id(connection, user_id=user_id)
+
+    if selected_user is None:
+        raise LookupError(
+            json.dumps(
+                {
+                    "http_status": status.HTTP_404_NOT_FOUND,
+                    "code": "user_not_found",
+                    "message": "No existe un usuario con el ID solicitado.",
+                }
+            )
+        )
+
+    pdf_available, pdf_message = is_pdf_generation_available()
+    if not pdf_available:
+        raise ReportGenerationError(
+            json.dumps(
+                {
+                    "http_status": status.HTTP_503_SERVICE_UNAVAILABLE,
+                    "code": "pdf_generation_unavailable",
+                    "message": pdf_message or "La generación PDF no está disponible en este entorno.",
+                    "extra": {"pdf": {"available": False}, "email": selected_user["user_email"]},
+                }
+            )
+        )
+
+    selected_user_data = dict(selected_user)
+
+    dashboard_data = _build_dashboard_data(user_email=selected_user_data["user_email"])
+    report = generate_user_report_pdf(
+        selected_user=selected_user_data,
+        dashboard_data=dashboard_data,
+    )
+    stored_path = persist_generated_report(
+        report,
+        output_dir=ensure_generated_reports_directory(),
+    )
+    user_portfolios = dashboard_data.get("user_portfolios", [])
+    return selected_user_data, dashboard_data, report, stored_path, user_portfolios
+
+
+def _build_pdf_response(*, report: Any, stored_path: Any) -> ReportPdfResponse:
+    """Construye los metadatos del PDF persistido."""
+    relative_path = _build_relative_report_path(str(stored_path))
+    return ReportPdfResponse(
+        file_name=report.file_name,
+        relative_path=relative_path,
+        absolute_path=str(stored_path),
+        download_url=_build_download_url(report.file_name),
+        generated_at=report.generated_at,
+        size_bytes=len(report.content),
+    )
+
+
+def _build_zapier_payload(
+    *,
+    user_id: int,
+    selected_user_data: dict[str, Any],
+    portfolio: ReportPortfolioResponse,
+    pdf: ReportPdfResponse,
+    report: Any,
+) -> dict[str, Any]:
+    """Construye el payload que luego consumira Zapier."""
+    return {
+        "event": "user_report_generated",
+        "trigger_source": "manual_debug",
+        "requested_user_id": user_id,
+        "generated_at": report.generated_at,
+        "user": {
+            "id": int(selected_user_data["user_id"]),
+            "name": str(selected_user_data["user_name"]),
+            "email": str(selected_user_data["user_email"]),
+        },
+        "portfolio": portfolio.model_dump(),
+        "pdf": {
+            **pdf.model_dump(),
+            "public_download_url": pdf.download_url if settings.public_api_base_url else None,
+        },
+        "report": {
+            "sections": list(report.sections),
+            "warnings": list(report.warnings),
+        },
+        "integration": {
+            "zapier_webhook_configured": bool(settings.zapier_webhook_url),
+            "public_api_base_url": settings.public_api_base_url,
+        },
+    }
+
+
+def _build_json_error_from_encoded(user_id: int, encoded_message: str) -> JSONResponse:
+    """Reconstruye errores internos serializados para responder de forma uniforme."""
+    try:
+        payload = json.loads(encoded_message)
+    except json.JSONDecodeError:
+        return _error_response(
+            http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="unexpected_report_error",
+            message=encoded_message,
+            user_id=user_id,
+        )
+
+    return _error_response(
+        http_status=int(payload.get("http_status", status.HTTP_500_INTERNAL_SERVER_ERROR)),
+        code=str(payload.get("code", "unexpected_report_error")),
+        message=str(payload.get("message", "Ocurrió un error inesperado.")),
+        user_id=user_id,
+        extra=payload.get("extra"),
+    )
+
+
+def _send_zapier_webhook(payload: dict[str, Any]) -> ZapierDeliveryResponse:
+    """Envía el payload a Zapier cuando existe webhook configurado."""
+    attempted_at = datetime.now(UTC).isoformat()
+    webhook_url = settings.zapier_webhook_url
+    if not webhook_url:
+        return ZapierDeliveryResponse(
+            mode="preview",
+            webhook_configured=False,
+            attempted_at=attempted_at,
+        )
+
+    body = json.dumps(payload).encode("utf-8")
+    req = request.Request(
+        webhook_url,
+        data=body,
+        headers={"Content-Type": "application/json; charset=utf-8"},
+        method="POST",
+    )
+    try:
+        with request.urlopen(req, timeout=10) as response:
+            response_body = response.read().decode("utf-8", errors="replace")
+            return ZapierDeliveryResponse(
+                mode="webhook_sent",
+                webhook_configured=True,
+                target_url=webhook_url,
+                attempted_at=attempted_at,
+                delivered_at=datetime.now(UTC).isoformat(),
+                http_status=getattr(response, "status", response.getcode()),
+                response_excerpt=response_body[:500] or None,
+            )
+    except error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"Zapier respondió con HTTP {exc.code}: {detail[:500] or 'sin cuerpo de respuesta'}"
+        ) from exc
+    except error.URLError as exc:
+        raise RuntimeError(f"No fue posible contactar el webhook de Zapier: {exc.reason}") from exc
+
+
 # ------------------------------------------------------------
 # Endpoints de la API
 # ------------------------------------------------------------
@@ -213,79 +440,35 @@ def generate_report(user_id: int) -> ReportGenerationResponse | JSONResponse:
       5. Genera y guarda el PDF
       6. Retorna los metadatos del reporte generado
     """
-    # Paso 1: Inicializar base de datos
     try:
-        initialize_database(reset=False)
-    except Exception as exc:
-        return _error_response(
-            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            code="database_unavailable",
-            message=f"No fue posible inicializar o abrir la base de datos: {exc}",
-            user_id=user_id,
-            extra={"database_path": str(settings.database_path)},
-        )
-
-    # Paso 2: Verificar que el usuario existe en la base de datos
-    with get_connection() as connection:
-        selected_user = get_user_by_id(connection, user_id=user_id)
-
-    if selected_user is None:
-        return _error_response(
-            http_status=status.HTTP_404_NOT_FOUND,
-            code="user_not_found",
-            message="No existe un usuario con el ID solicitado.",
-            user_id=user_id,
-        )
-
-    # Paso 3: Verificar que la generación PDF está disponible en el entorno
-    pdf_available, pdf_message = is_pdf_generation_available()
-    if not pdf_available:
-        return _error_response(
-            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            code="pdf_generation_unavailable",
-            message=pdf_message or "La generación PDF no está disponible en este entorno.",
-            user_id=user_id,
-            extra={
-                "pdf": {"available": False},
-                "email": selected_user["user_email"],
-            },
-        )
-
-    selected_user_data = dict(selected_user)
-
-    # Pasos 4 y 5: Construir datos del dashboard y generar el PDF
-    try:
-        dashboard_data = _build_dashboard_data(user_email=selected_user_data["user_email"])
-        report = generate_user_report_pdf(
-            selected_user=selected_user_data,
-            dashboard_data=dashboard_data,
-        )
-        # Guardar el PDF en disco
-        stored_path = persist_generated_report(
-            report,
-            output_dir=ensure_generated_reports_directory(),
-        )
+        selected_user_data, dashboard_data, report, stored_path, user_portfolios = _prepare_report_artifacts(user_id)
+    except LookupError as exc:
+        return _build_json_error_from_encoded(user_id, str(exc))
     except ReportGenerationError as exc:
+        message = str(exc)
+        if message.startswith("{"):
+            return _build_json_error_from_encoded(user_id, message)
         return _error_response(
             http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="report_generation_failed",
-            message=str(exc),
+            message=message,
             user_id=user_id,
-            extra={"email": selected_user_data["user_email"]},
         )
+    except RuntimeError as exc:
+        return _build_json_error_from_encoded(user_id, str(exc))
     except Exception as exc:
         return _error_response(
             http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code="unexpected_report_error",
             message=f"Ocurrió un error al preparar el informe: {exc}",
             user_id=user_id,
-            extra={"email": selected_user_data["user_email"]},
         )
 
-    # Paso 6: Construir y retornar la respuesta con metadatos del reporte
-    portfolio_summary = dashboard_data["portfolio_snapshot"].get("portfolio_summary", {})
-    user_portfolios = dashboard_data.get("user_portfolios", [])
-    relative_path = _build_relative_report_path(str(stored_path))
+    portfolio = _build_portfolio_response(
+        dashboard_data=dashboard_data,
+        user_portfolios=user_portfolios,
+    )
+    pdf = _build_pdf_response(report=report, stored_path=stored_path)
 
     return ReportGenerationResponse(
         status="generated",
@@ -295,25 +478,89 @@ def generate_report(user_id: int) -> ReportGenerationResponse | JSONResponse:
             name=str(selected_user_data["user_name"]),
             email=str(selected_user_data["user_email"]),
         ),
-        portfolio=ReportPortfolioResponse(
-            portfolio_count=int(portfolio_summary.get("portfolio_count", 0) or 0),
-            position_count=int(portfolio_summary.get("position_count", 0) or 0),
-            total_current_value=float(portfolio_summary.get("total_current_value", 0.0) or 0.0),
-            total_cost_basis=float(portfolio_summary.get("total_cost_basis", 0.0) or 0.0),
-            primary_portfolio=(
-                str(user_portfolios[0].get("portfolio_name"))
-                if user_portfolios
-                else None
-            ),
+        portfolio=portfolio,
+        pdf=pdf,
+        warnings=list(report.warnings),
+        sections=list(report.sections),
+    )
+
+
+@app.post(
+    "/api/zapier/debug/report",
+    tags=["reports", "zapier"],
+    response_model=ZapierDebugResponse,
+)
+def trigger_zapier_debug_report(user_id: int = 1) -> ZapierDebugResponse | JSONResponse:
+    """Dispara manualmente el flujo base hacia Zapier o devuelve un preview util."""
+    try:
+        selected_user_data, dashboard_data, report, stored_path, user_portfolios = _prepare_report_artifacts(user_id)
+    except LookupError as exc:
+        return _build_json_error_from_encoded(user_id, str(exc))
+    except ReportGenerationError as exc:
+        message = str(exc)
+        if message.startswith("{"):
+            return _build_json_error_from_encoded(user_id, message)
+        return _error_response(
+            http_status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="report_generation_failed",
+            message=message,
+            user_id=user_id,
+        )
+    except RuntimeError as exc:
+        return _build_json_error_from_encoded(user_id, str(exc))
+    except Exception as exc:
+        return _error_response(
+            http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="unexpected_zapier_error",
+            message=f"Ocurrió un error al preparar el flujo Zapier: {exc}",
+            user_id=user_id,
+        )
+
+    portfolio = _build_portfolio_response(
+        dashboard_data=dashboard_data,
+        user_portfolios=user_portfolios,
+    )
+    pdf = _build_pdf_response(report=report, stored_path=stored_path)
+    zapier_payload = _build_zapier_payload(
+        user_id=user_id,
+        selected_user_data=selected_user_data,
+        portfolio=portfolio,
+        pdf=pdf,
+        report=report,
+    )
+
+    try:
+        delivery = _send_zapier_webhook(zapier_payload)
+    except RuntimeError as exc:
+        return _error_response(
+            http_status=status.HTTP_502_BAD_GATEWAY,
+            code="zapier_delivery_failed",
+            message=str(exc),
+            user_id=user_id,
+            extra={
+                "zapier_payload": zapier_payload,
+                "pdf": pdf.model_dump(),
+            },
+        )
+
+    message = (
+        "Preview listo para diseñar el Zap; define ZAPIER_WEBHOOK_URL con un webhook para enviar el payload real."
+        if delivery.mode == "preview"
+        else "Payload enviado correctamente al webhook configurado de Zapier."
+    )
+
+    return ZapierDebugResponse(
+        status="preview" if delivery.mode == "preview" else "sent",
+        message=message,
+        user=ReportUserResponse(
+            id=int(selected_user_data["user_id"]),
+            name=str(selected_user_data["user_name"]),
+            email=str(selected_user_data["user_email"]),
         ),
-        pdf=ReportPdfResponse(
-            file_name=report.file_name,
-            relative_path=relative_path,
-            absolute_path=str(stored_path),
-            download_url=f"/report-files/{report.file_name}",
-            generated_at=report.generated_at,
-            size_bytes=len(report.content),
-        ),
+        portfolio=portfolio,
+        pdf=pdf,
+        zapier_payload=zapier_payload,
+        delivery=delivery,
         warnings=list(report.warnings),
         sections=list(report.sections),
     )

@@ -6,10 +6,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Mapping
+
+
+DEFAULT_ZAPIER_WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/27964672/42twvzz/"
 
 
 # ------------------------------------------------------------
@@ -115,6 +118,8 @@ class Settings:
     generated_reports_dirname: str = "generated_reports"  # Subcarpeta de PDFs generados
     api_key: str | None = field(default=None, repr=False)  # API key (oculta en repr)
     api_key_env_name: str | None = None              # Nombre de la variable de la API key
+    zapier_webhook_url: str | None = None            # Webhook opcional para enviar payloads a Zapier
+    public_api_base_url: str | None = None           # Base pública para construir URLs absolutas
 
     @property
     def base_dir(self) -> Path:
@@ -238,6 +243,24 @@ def build_settings(
             environ=resolved_environ,
             dotenv_values=dotenv_values,
             default="generated_reports",
+        ),
+        zapier_webhook_url=(
+            _get_env_value(
+                "ZAPIER_WEBHOOK_URL",
+                environ=resolved_environ,
+                dotenv_values=dotenv_values,
+                default=DEFAULT_ZAPIER_WEBHOOK_URL,
+            ).strip()
+            or None
+        ),
+        public_api_base_url=(
+            _get_env_value(
+                "PUBLIC_API_BASE_URL",
+                environ=resolved_environ,
+                dotenv_values=dotenv_values,
+                default="",
+            ).strip().rstrip("/")
+            or None
         ),
         api_key=api_key,
         api_key_env_name=api_key_env_name or configured_api_key_name,

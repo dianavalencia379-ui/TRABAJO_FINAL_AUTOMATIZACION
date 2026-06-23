@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from config import build_settings
+from config import DEFAULT_ZAPIER_WEBHOOK_URL, build_settings
 
 
 def test_build_settings_reads_api_key_from_dotenv(tmp_path: Path) -> None:
@@ -98,3 +98,24 @@ def test_require_api_key_raises_when_missing(tmp_path: Path) -> None:
     # Debe lanzar RuntimeError con mensaje descriptivo
     with pytest.raises(RuntimeError, match="Falta configurar la API key"):
         settings.require_api_key()
+
+
+def test_build_settings_reads_zapier_and_public_base_urls(tmp_path: Path) -> None:
+    """Comprueba la carga de configuración base para la integración con Zapier."""
+    (tmp_path / ".env").write_text(
+        "ZAPIER_WEBHOOK_URL=https://hooks.zapier.com/hooks/catch/123/abc\n"
+        "PUBLIC_API_BASE_URL=https://api.example.com/\n",
+        encoding="utf-8",
+    )
+
+    settings = build_settings(base_dir=tmp_path, environ={})
+
+    assert settings.zapier_webhook_url == "https://hooks.zapier.com/hooks/catch/123/abc"
+    assert settings.public_api_base_url == "https://api.example.com"
+
+
+def test_build_settings_uses_default_zapier_webhook_when_missing(tmp_path: Path) -> None:
+    """Usa el webhook por defecto en código cuando no existe configuración explícita."""
+    settings = build_settings(base_dir=tmp_path, environ={})
+
+    assert settings.zapier_webhook_url == DEFAULT_ZAPIER_WEBHOOK_URL

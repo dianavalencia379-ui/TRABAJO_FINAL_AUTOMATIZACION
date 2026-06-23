@@ -244,9 +244,24 @@ informes automatizados trimestrales
      Frecuencia Cada 3 meses
      Acción 1 HTTP Request a la API del dashboard
      Método POST
-     URL https://dashboard-financiero.com/api/report/{user_id}
-     Acción 2 Enviar email al correo devuelto por la API
-     Adjunto Informe PDF generado automáticamente
+      URL https://dashboard-financiero.com/api/report/{user_id}
+      Acción 2 Enviar email al correo devuelto por la API
+      Adjunto Informe PDF generado automáticamente
+
+  *9.4. Base local para Zapier (implementada)*
+
+     Variables de entorno disponibles para la integración:
+     `ZAPIER_WEBHOOK_URL` webhook Catch Hook opcional; si falta, la API usa por defecto `https://hooks.zapier.com/hooks/catch/27964672/42twvzz/`.
+     `PUBLIC_API_BASE_URL` base pública de la API para construir `download_url` absolutos del PDF.
+
+      Endpoint manual de prueba:
+      `POST /api/zapier/debug/report?user_id=1`
+
+      Comportamiento:
+      - Si `ZAPIER_WEBHOOK_URL` no está configurado, la API usa el webhook por defecto en código y envía el payload real.
+      - Si `ZAPIER_WEBHOOK_URL` existe, la API mantiene prioridad y envía el JSON a ese webhook.
+      - Si se deja `ZAPIER_WEBHOOK_URL` vacío explícitamente, la API devuelve un `preview` con el payload que Zapier recibiría.
+      - El flujo reutiliza la generación PDF actual por usuario y mantiene `POST /api/report/{user_id}` como endpoint principal de generación.
 
 **10. Datos ficticios de demostración**
 
