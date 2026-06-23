@@ -73,6 +73,7 @@ class ReportPdfResponse(BaseModel):
     relative_path: str    # Ruta relativa al proyecto
     absolute_path: str    # Ruta absoluta en el sistema
     download_url: str     # URL para descargar el PDF desde la API
+    public_download_url: str | None = None  # URL pública opcional para integraciones externas
     generated_at: str     # Fecha y hora de generación
     size_bytes: int       # Tamaño del archivo en bytes
     available: bool = True  # Indica si el PDF está disponible
@@ -215,11 +216,15 @@ def _build_relative_report_path(file_path: str) -> str:
 
 
 def _build_download_url(file_name: str) -> str:
-    """Construye la URL de descarga, absoluta si existe base pública."""
-    relative_url = f"/report-files/{file_name}"
-    if settings.public_api_base_url:
-        return f"{settings.public_api_base_url}{relative_url}"
-    return relative_url
+    """Construye la URL relativa de descarga preservando el contrato principal."""
+    return f"/report-files/{file_name}"
+
+
+def _build_public_download_url(file_name: str) -> str | None:
+    """Construye la URL pública absoluta si existe una base pública configurada."""
+    if not settings.public_api_base_url:
+        return None
+    return f"{settings.public_api_base_url}{_build_download_url(file_name)}"
 
 
 def _build_portfolio_response(
@@ -314,6 +319,7 @@ def _build_pdf_response(*, report: Any, stored_path: Any) -> ReportPdfResponse:
         relative_path=relative_path,
         absolute_path=str(stored_path),
         download_url=_build_download_url(report.file_name),
+        public_download_url=_build_public_download_url(report.file_name),
         generated_at=report.generated_at,
         size_bytes=len(report.content),
     )
@@ -336,7 +342,7 @@ def _build_zapier_payload(
             "size_bytes": len(report.content),
             "encoding": "base64",
             "content_base64": base64.b64encode(report.content).decode("ascii"),
-            "public_download_url": pdf.download_url if settings.public_api_base_url else None,
+            "public_download_url": pdf.public_download_url,
         }
     )
 

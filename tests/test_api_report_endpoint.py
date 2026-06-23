@@ -74,8 +74,48 @@ def test_generate_report_endpoint_returns_pdf_reference(tmp_path: Path, monkeypa
     assert payload["portfolio"]["portfolio_count"] >= 1
     assert payload["pdf"]["file_name"].endswith(".pdf")
     assert payload["pdf"]["download_url"].startswith("/report-files/")
+    assert payload["pdf"]["public_download_url"] is None
     assert payload["pdf"]["size_bytes"] > 0
     assert Path(payload["pdf"]["absolute_path"]).exists()
+
+
+def test_generate_report_endpoint_exposes_public_pdf_url_without_replacing_download_url(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """Expone public_download_url cuando existe base pública y conserva download_url relativo."""
+    monkeypatch.setattr(api, "ensure_generated_reports_directory", lambda: tmp_path)
+    monkeypatch.setattr(api, "is_pdf_generation_available", lambda: (True, None))
+    monkeypatch.setattr(
+        api,
+        "generate_user_report_pdf",
+        lambda **_: GeneratedPdfReport(
+            file_name="informe_test.pdf",
+            content=b"%PDF-1.4\nmock",
+            generated_at="2026-06-23T10:00:00+00:00",
+            warnings=[],
+            sections=["Datos del usuario"],
+        ),
+    )
+    monkeypatch.setattr(
+        api,
+        "settings",
+        SimpleNamespace(
+            app_name=api.settings.app_name,
+            base_dir=api.settings.base_dir,
+            database_path=api.settings.database_path,
+            public_api_base_url="https://api.example.com",
+            zapier_webhook_url=api.settings.zapier_webhook_url,
+        ),
+    )
+
+    client = _build_test_client()
+    response = client.post("/api/report/1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["pdf"]["download_url"] == "/report-files/informe_test.pdf"
+    assert payload["pdf"]["public_download_url"] == "https://api.example.com/report-files/informe_test.pdf"
 
 
 def test_generate_report_endpoint_returns_404_for_unknown_user() -> None:
@@ -225,8 +265,9 @@ def test_zapier_debug_report_posts_to_default_webhook_when_missing_config(
     assert payload["delivery"]["mode"] == "webhook_sent"
     assert payload["delivery"]["webhook_configured"] is True
     assert payload["delivery"]["http_status"] == 200
-    assert payload["pdf"]["download_url"] == "https://api.example.com/report-files/informe_test.pdf"
-    assert payload["zapier_payload"]["pdf"]["public_download_url"] == payload["pdf"]["download_url"]
+    assert payload["pdf"]["download_url"] == "/report-files/informe_test.pdf"
+    assert payload["pdf"]["public_download_url"] == "https://api.example.com/report-files/informe_test.pdf"
+    assert payload["zapier_payload"]["pdf"]["public_download_url"] == payload["pdf"]["public_download_url"]
     assert payload["zapier_payload"]["pdf"]["file_name"] == "informe_test.pdf"
     assert payload["zapier_payload"]["pdf"]["mime_type"] == "application/pdf"
     assert payload["zapier_payload"]["pdf"]["size_bytes"] == len(b"%PDF-1.4\nmock")
@@ -297,8 +338,11 @@ def test_zapier_debug_report_posts_to_configured_webhook(tmp_path: Path, monkeyp
     assert payload["status"] == "sent"
     assert payload["delivery"]["mode"] == "webhook_sent"
     assert payload["delivery"]["http_status"] == 200
+    assert payload["pdf"]["download_url"] == "/report-files/informe_test.pdf"
+    assert payload["pdf"]["public_download_url"] == "https://api.example.com/report-files/informe_test.pdf"
     assert payload["zapier_payload"]["pdf"]["mime_type"] == "application/pdf"
     assert payload["zapier_payload"]["pdf"]["encoding"] == "base64"
+    assert payload["zapier_payload"]["pdf"]["public_download_url"] == payload["pdf"]["public_download_url"]
     assert payload["zapier_payload"]["pdf"]["content_base64"] == base64.b64encode(b"%PDF-1.4\nmock").decode("ascii")
     assert captured["timeout"] == 10
     assert captured["url"] == "https://hooks.zapier.com/hooks/catch/123/abc"
@@ -343,3 +387,5 @@ def test_zapier_debug_report_returns_preview_when_webhook_is_explicitly_empty(
     assert payload["status"] == "preview"
     assert payload["delivery"]["mode"] == "preview"
     assert payload["delivery"]["webhook_configured"] is False
+    assert payload["pdf"]["download_url"] == "/report-files/informe_test.pdf"
+    assert payload["pdf"]["public_download_url"] == "https://api.example.com/report-files/informe_test.pdf"
