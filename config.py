@@ -13,6 +13,7 @@ from typing import Mapping
 
 
 DEFAULT_ZAPIER_WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/27964672/42twvzz/"
+DEFAULT_ZAPIER_REPORT_INTERVAL_SECONDS = 90 * 24 * 60 * 60
 
 
 # ------------------------------------------------------------
@@ -99,6 +100,32 @@ def _get_first_secret(
     return None, None
 
 
+def _get_int_env_value(
+    name: str,
+    *,
+    environ: Mapping[str, str],
+    dotenv_values: Mapping[str, str],
+    default: int,
+) -> int:
+    """Carga un entero desde configuración y valida que no sea negativo."""
+    raw_value = _get_env_value(
+        name,
+        environ=environ,
+        dotenv_values=dotenv_values,
+        default=str(default),
+    ).strip()
+
+    try:
+        value = int(raw_value)
+    except ValueError as exc:
+        raise ValueError(f"La variable {name} debe ser un entero válido.") from exc
+
+    if value < 0:
+        raise ValueError(f"La variable {name} no puede ser negativa.")
+
+    return value
+
+
 # ------------------------------------------------------------
 # Clase principal de configuración (inmutable)
 # ------------------------------------------------------------
@@ -120,6 +147,7 @@ class Settings:
     api_key_env_name: str | None = None              # Nombre de la variable de la API key
     zapier_webhook_url: str | None = None            # Webhook opcional para enviar payloads a Zapier
     public_api_base_url: str | None = None           # Base pública para construir URLs absolutas
+    zapier_report_interval_seconds: int = DEFAULT_ZAPIER_REPORT_INTERVAL_SECONDS
 
     @property
     def base_dir(self) -> Path:
@@ -261,6 +289,12 @@ def build_settings(
                 default="",
             ).strip().rstrip("/")
             or None
+        ),
+        zapier_report_interval_seconds=_get_int_env_value(
+            "ZAPIER_REPORT_INTERVAL_SECONDS",
+            environ=resolved_environ,
+            dotenv_values=dotenv_values,
+            default=DEFAULT_ZAPIER_REPORT_INTERVAL_SECONDS,
         ),
         api_key=api_key,
         api_key_env_name=api_key_env_name or configured_api_key_name,

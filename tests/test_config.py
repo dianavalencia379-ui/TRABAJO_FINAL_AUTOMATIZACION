@@ -10,7 +10,11 @@ from pathlib import Path
 
 import pytest
 
-from config import DEFAULT_ZAPIER_WEBHOOK_URL, build_settings
+from config import (
+    DEFAULT_ZAPIER_REPORT_INTERVAL_SECONDS,
+    DEFAULT_ZAPIER_WEBHOOK_URL,
+    build_settings,
+)
 
 
 def test_build_settings_reads_api_key_from_dotenv(tmp_path: Path) -> None:
@@ -119,3 +123,22 @@ def test_build_settings_uses_default_zapier_webhook_when_missing(tmp_path: Path)
     settings = build_settings(base_dir=tmp_path, environ={})
 
     assert settings.zapier_webhook_url == DEFAULT_ZAPIER_WEBHOOK_URL
+
+
+def test_build_settings_reads_zapier_report_interval_seconds(tmp_path: Path) -> None:
+    """Permite acortar el temporizador automático con una variable simple de entorno."""
+    (tmp_path / ".env").write_text(
+        "ZAPIER_REPORT_INTERVAL_SECONDS=42\n",
+        encoding="utf-8",
+    )
+
+    settings = build_settings(base_dir=tmp_path, environ={})
+
+    assert settings.zapier_report_interval_seconds == 42
+
+
+def test_build_settings_uses_default_zapier_report_interval_when_missing(tmp_path: Path) -> None:
+    """Mantiene 90 días por defecto si no se sobrescribe el intervalo."""
+    settings = build_settings(base_dir=tmp_path, environ={})
+
+    assert settings.zapier_report_interval_seconds == DEFAULT_ZAPIER_REPORT_INTERVAL_SECONDS

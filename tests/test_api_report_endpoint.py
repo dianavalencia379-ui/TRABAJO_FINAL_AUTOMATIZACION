@@ -106,6 +106,7 @@ def test_generate_report_endpoint_exposes_public_pdf_url_without_replacing_downl
             database_path=api.settings.database_path,
             public_api_base_url="https://api.example.com",
             zapier_webhook_url=api.settings.zapier_webhook_url,
+            zapier_report_interval_seconds=api.settings.zapier_report_interval_seconds,
         ),
     )
 
@@ -227,6 +228,7 @@ def test_zapier_debug_report_posts_to_default_webhook_when_missing_config(
             database_path=api.settings.database_path,
             public_api_base_url="https://api.example.com",
             zapier_webhook_url="https://hooks.zapier.com/hooks/catch/27964672/42twvzz/",
+            zapier_report_interval_seconds=api.settings.zapier_report_interval_seconds,
         ),
     )
 
@@ -302,6 +304,7 @@ def test_zapier_debug_report_posts_to_configured_webhook(tmp_path: Path, monkeyp
             database_path=api.settings.database_path,
             public_api_base_url="https://api.example.com",
             zapier_webhook_url="https://hooks.zapier.com/hooks/catch/123/abc",
+            zapier_report_interval_seconds=api.settings.zapier_report_interval_seconds,
         ),
     )
 
@@ -376,6 +379,7 @@ def test_zapier_debug_report_returns_preview_when_webhook_is_explicitly_empty(
             database_path=api.settings.database_path,
             public_api_base_url="https://api.example.com",
             zapier_webhook_url="",
+            zapier_report_interval_seconds=api.settings.zapier_report_interval_seconds,
         ),
     )
 
@@ -389,3 +393,155 @@ def test_zapier_debug_report_returns_preview_when_webhook_is_explicitly_empty(
     assert payload["delivery"]["webhook_configured"] is False
     assert payload["pdf"]["download_url"] == "/report-files/informe_test.pdf"
     assert payload["pdf"]["public_download_url"] == "https://api.example.com/report-files/informe_test.pdf"
+
+
+def test_run_scheduled_zapier_reports_processes_all_users(monkeypatch) -> None:
+    """Reutiliza el flujo Zapier existente para todos los usuarios cuando vence el temporizador."""
+
+    class DummyConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    processed: list[tuple[int, str]] = []
+
+    monkeypatch.setattr(api, "initialize_database", lambda reset=False: {"seeded": False})
+    monkeypatch.setattr(api, "get_connection", lambda: DummyConnection())
+    monkeypatch.setattr(
+        api,
+        "get_users",
+        lambda connection: [
+            {"user_id": 1},
+            {"user_id": 2},
+        ],
+    )
+
+    def fake_execute_zapier_report_flow(*, user_id: int, trigger_source: str):
+        processed.append((user_id, trigger_source))
+        return {
+            "delivery": SimpleNamespace(mode="webhook_sent"),
+        }
+
+    monkeypatch.setattr(api, "_execute_zapier_report_flow", fake_execute_zapier_report_flow)
+
+    summary = api._run_scheduled_zapier_reports()
+
+    assert processed == [
+        (1, "startup_interval_timer"),
+        (2, "startup_interval_timer"),
+    ]
+    assert summary == {
+        "attempted_user_ids": [1, 2],
+        "sent_user_ids": [1, 2],
+        "preview_user_ids": [],
+        "failed_user_ids": [],
+    }
+
+
+def test_schedule_next_zapier_report_run_chunks_long_intervals(monkeypatch) -> None:
+    """Trocea intervalos largos para evitar el overflow de threading.Timer en Windows."""
+
+    scheduled: list[int] = []
+
+    class FakeTimer:
+        def __init__(self, interval, callback):
+            self.interval = interval
+            self.callback = callback
+            self.daemon = False
+
+        def start(self):
+            scheduled.append(self.interval)
+
+        def cancel(self):
+            return None
+
+    monkeypatch.setattr(api.threading, "Timer", FakeTimer)
+    monkeypatch.setattr(
+        api,
+        "settings",
+        SimpleNamespace(
+            app_name=api.settings.app_name,
+            base_dir=api.settings.base_dir,
+            database_path=api.settings.database_path,
+            public_api_base_url=api.settings.public_api_base_url,
+            zapier_webhook_url=api.settings.zapier_webhook_url,
+            zapier_report_interval_seconds=90 * 24 * 60 * 60,
+        ),
+    )
+
+    api._zapier_timer = None
+    api._zapier_timer_remaining_seconds = 0
+
+    api._schedule_next_zapier_report_run()
+
+    assert scheduled == [api._ZAPIER_TIMER_MAX_CHUNK_SECONDS]
+    assert api._zapier_timer_remaining_seconds == 90 * 24 * 60 * 60
+
+
+def test_scheduled_zapier_report_callback_waits_full_interval_before_running(monkeypatch) -> None:
+    """Solo ejecuta el lote cuando se consumen todos los tramos del intervalo configurado."""
+
+    scheduled: list[int] = []
+    reports_run: list[str] = []
+    interval = (2 * api._ZAPIER_TIMER_MAX_CHUNK_SECONDS) + 5
+
+    class FakeTimer:
+        def __init__(self, delay, callback):
+            self.delay = delay
+            self.callback = callback
+            self.daemon = False
+
+        def start(self):
+            scheduled.append(self.delay)
+
+        def cancel(self):
+            return None
+
+    monkeypatch.setattr(api.threading, "Timer", FakeTimer)
+    monkeypatch.setattr(
+        api,
+        "settings",
+        SimpleNamespace(
+            app_name=api.settings.app_name,
+            base_dir=api.settings.base_dir,
+            database_path=api.settings.database_path,
+            public_api_base_url=api.settings.public_api_base_url,
+            zapier_webhook_url=api.settings.zapier_webhook_url,
+            zapier_report_interval_seconds=interval,
+        ),
+    )
+    monkeypatch.setattr(api, "_run_scheduled_zapier_reports", lambda: reports_run.append("ran") or {
+        "attempted_user_ids": [],
+        "sent_user_ids": [],
+        "preview_user_ids": [],
+        "failed_user_ids": [],
+    })
+
+    api._zapier_timer = None
+    api._zapier_timer_remaining_seconds = 0
+    api._zapier_timer_running = True
+
+    try:
+        api._schedule_next_zapier_report_run()
+        api._scheduled_zapier_report_callback()
+        api._scheduled_zapier_report_callback()
+
+        assert reports_run == []
+        assert scheduled == [
+            api._ZAPIER_TIMER_MAX_CHUNK_SECONDS,
+            api._ZAPIER_TIMER_MAX_CHUNK_SECONDS,
+            5,
+        ]
+        assert api._zapier_timer_remaining_seconds == 5
+
+        api._scheduled_zapier_report_callback()
+
+        assert reports_run == ["ran"]
+        assert scheduled[-1] == api._ZAPIER_TIMER_MAX_CHUNK_SECONDS
+        assert api._zapier_timer_remaining_seconds == interval
+    finally:
+        api._zapier_timer_running = False
+        api._zapier_timer_remaining_seconds = 0
+        api._zapier_timer = None

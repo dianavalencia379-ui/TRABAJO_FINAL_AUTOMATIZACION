@@ -250,18 +250,20 @@ informes automatizados trimestrales
 
   *9.4. Base local para Zapier (implementada)*
 
-     Variables de entorno disponibles para la integración:
-     `ZAPIER_WEBHOOK_URL` webhook Catch Hook opcional; si falta, la API usa por defecto `https://hooks.zapier.com/hooks/catch/27964672/42twvzz/`.
-     `PUBLIC_API_BASE_URL` base pública de la API para construir `download_url` absolutos del PDF.
+      Variables de entorno disponibles para la integración:
+      `ZAPIER_WEBHOOK_URL` webhook Catch Hook opcional; si falta, la API usa por defecto `https://hooks.zapier.com/hooks/catch/27964672/42twvzz/`.
+      `PUBLIC_API_BASE_URL` base pública de la API para construir `download_url` absolutos del PDF.
+      `ZAPIER_REPORT_INTERVAL_SECONDS` intervalo del temporizador interno en segundos; por defecto usa `7776000` (90 días). Para verificar rápido puede ajustarse temporalmente, por ejemplo `10`.
 
       Endpoint manual de prueba:
       `POST /api/zapier/debug/report?user_id=1`
 
-      Comportamiento:
-      - Si `ZAPIER_WEBHOOK_URL` no está configurado, la API usa el webhook por defecto en código y envía el payload real.
-      - Si `ZAPIER_WEBHOOK_URL` existe, la API mantiene prioridad y envía el JSON a ese webhook.
-      - Si se deja `ZAPIER_WEBHOOK_URL` vacío explícitamente, la API devuelve un `preview` con el payload que Zapier recibiría.
-      - El flujo reutiliza la generación PDF actual por usuario y mantiene `POST /api/report/{user_id}` como endpoint principal de generación.
+       Comportamiento:
+       - Si `ZAPIER_WEBHOOK_URL` no está configurado, la API usa el webhook por defecto en código y envía el payload real.
+       - Si `ZAPIER_WEBHOOK_URL` existe, la API mantiene prioridad y envía el JSON a ese webhook.
+       - Si se deja `ZAPIER_WEBHOOK_URL` vacío explícitamente, la API devuelve un `preview` con el payload que Zapier recibiría.
+       - El flujo reutiliza la generación PDF actual por usuario y mantiene `POST /api/report/{user_id}` como endpoint principal de generación.
+       - Al arrancar la API se arma un temporizador en memoria; si el intervalo es muy largo se espera por tramos mas cortos para evitar el `OverflowError` de `threading.Timer` en Windows, y al completar el intervalo dispara el flujo Zapier existente para todos los usuarios actuales y vuelve a programarse desde ese momento.
 
 **10. Datos ficticios de demostración**
 

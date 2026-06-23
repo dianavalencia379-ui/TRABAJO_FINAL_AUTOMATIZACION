@@ -9,6 +9,8 @@ from __future__ import annotations
 import base64
 from datetime import UTC, datetime
 import json
+import logging
+import threading
 from typing import Any
 from urllib import error, request
 
@@ -28,6 +30,7 @@ from data_layer.db import (
     ensure_generated_reports_directory,
     get_connection,
     get_user_by_id,
+    get_users,
     get_user_portfolios,
     initialize_database,
 )
@@ -117,6 +120,14 @@ class ZapierDebugResponse(BaseModel):
 # ------------------------------------------------------------
 # Inicialización de la aplicación FastAPI
 # ------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+
+_ZAPIER_TIMER_MAX_CHUNK_SECONDS = 24 * 60 * 60
+_zapier_timer_lock = threading.Lock()
+_zapier_timer: threading.Timer | None = None
+_zapier_timer_remaining_seconds = 0
+_zapier_timer_running = False
 
 app = FastAPI(
     title=f"{settings.app_name} API",
@@ -332,6 +343,7 @@ def _build_zapier_payload(
     portfolio: ReportPortfolioResponse,
     pdf: ReportPdfResponse,
     report: Any,
+    trigger_source: str,
 ) -> dict[str, Any]:
     """Construye el payload que luego consumira Zapier."""
     pdf_payload = pdf.model_dump()
@@ -348,7 +360,7 @@ def _build_zapier_payload(
 
     return {
         "event": "user_report_generated",
-        "trigger_source": "manual_debug",
+        "trigger_source": trigger_source,
         "requested_user_id": user_id,
         "generated_at": report.generated_at,
         "user": {
@@ -427,6 +439,154 @@ def _send_zapier_webhook(payload: dict[str, Any]) -> ZapierDeliveryResponse:
         ) from exc
     except error.URLError as exc:
         raise RuntimeError(f"No fue posible contactar el webhook de Zapier: {exc.reason}") from exc
+
+
+def _execute_zapier_report_flow(
+    *,
+    user_id: int,
+    trigger_source: str,
+) -> dict[str, Any]:
+    """Ejecuta el flujo reutilizable de generación y entrega a Zapier para un usuario."""
+    selected_user_data, dashboard_data, report, stored_path, user_portfolios = _prepare_report_artifacts(user_id)
+    portfolio = _build_portfolio_response(
+        dashboard_data=dashboard_data,
+        user_portfolios=user_portfolios,
+    )
+    pdf = _build_pdf_response(report=report, stored_path=stored_path)
+    zapier_payload = _build_zapier_payload(
+        user_id=user_id,
+        selected_user_data=selected_user_data,
+        portfolio=portfolio,
+        pdf=pdf,
+        report=report,
+        trigger_source=trigger_source,
+    )
+    delivery = _send_zapier_webhook(zapier_payload)
+
+    return {
+        "selected_user_data": selected_user_data,
+        "portfolio": portfolio,
+        "pdf": pdf,
+        "zapier_payload": zapier_payload,
+        "delivery": delivery,
+        "warnings": list(report.warnings),
+        "sections": list(report.sections),
+    }
+
+
+def _run_scheduled_zapier_reports() -> dict[str, list[int]]:
+    """Dispara el flujo Zapier para todos los usuarios actuales cuando vence el temporizador."""
+    initialize_database(reset=False)
+
+    with get_connection() as connection:
+        users = get_users(connection)
+
+    summary: dict[str, list[int]] = {
+        "attempted_user_ids": [],
+        "sent_user_ids": [],
+        "preview_user_ids": [],
+        "failed_user_ids": [],
+    }
+
+    for user in users:
+        user_id = int(user["user_id"])
+        summary["attempted_user_ids"].append(user_id)
+        try:
+            result = _execute_zapier_report_flow(
+                user_id=user_id,
+                trigger_source="startup_interval_timer",
+            )
+        except Exception:
+            summary["failed_user_ids"].append(user_id)
+            logger.exception("Fallo el envio programado por Zapier para el usuario %s.", user_id)
+            continue
+
+        delivery = result["delivery"]
+        if delivery.mode == "webhook_sent":
+            summary["sent_user_ids"].append(user_id)
+        else:
+            summary["preview_user_ids"].append(user_id)
+
+    return summary
+
+
+def _schedule_next_zapier_report_run() -> None:
+    """Programa la siguiente ejecución en memoria usando esperas troceadas seguras."""
+    global _zapier_timer, _zapier_timer_remaining_seconds
+
+    if settings.zapier_report_interval_seconds == 0:
+        _zapier_timer = None
+        _zapier_timer_remaining_seconds = 0
+        logger.info("Temporizador Zapier deshabilitado con ZAPIER_REPORT_INTERVAL_SECONDS=0.")
+        return
+
+    if _zapier_timer_remaining_seconds <= 0:
+        _zapier_timer_remaining_seconds = settings.zapier_report_interval_seconds
+
+    timer = threading.Timer(
+        min(_zapier_timer_remaining_seconds, _ZAPIER_TIMER_MAX_CHUNK_SECONDS),
+        _scheduled_zapier_report_callback,
+    )
+    timer.daemon = True
+    _zapier_timer = timer
+    timer.start()
+
+
+def _scheduled_zapier_report_callback() -> None:
+    """Consume un tramo del temporizador y ejecuta el lote al completar el intervalo."""
+    global _zapier_timer, _zapier_timer_remaining_seconds
+
+    with _zapier_timer_lock:
+        if not _zapier_timer_running:
+            _zapier_timer = None
+            return
+
+        _zapier_timer = None
+        if _zapier_timer_remaining_seconds > _ZAPIER_TIMER_MAX_CHUNK_SECONDS:
+            _zapier_timer_remaining_seconds -= _ZAPIER_TIMER_MAX_CHUNK_SECONDS
+            _schedule_next_zapier_report_run()
+            return
+
+        _zapier_timer_remaining_seconds = 0
+
+    try:
+        summary = _run_scheduled_zapier_reports()
+        logger.info(
+            "Flujo Zapier programado ejecutado. Intentados=%s, enviados=%s, preview=%s, fallidos=%s",
+            len(summary["attempted_user_ids"]),
+            len(summary["sent_user_ids"]),
+            len(summary["preview_user_ids"]),
+            len(summary["failed_user_ids"]),
+        )
+    finally:
+        with _zapier_timer_lock:
+            if _zapier_timer_running:
+                _schedule_next_zapier_report_run()
+
+
+@app.on_event("startup")
+def start_zapier_report_timer() -> None:
+    """Inicia el temporizador en memoria al arrancar la API."""
+    global _zapier_timer_running
+
+    with _zapier_timer_lock:
+        if _zapier_timer_running:
+            return
+        _zapier_timer_running = True
+        _schedule_next_zapier_report_run()
+
+
+@app.on_event("shutdown")
+def stop_zapier_report_timer() -> None:
+    """Detiene el temporizador al cerrar el proceso de la API."""
+    global _zapier_timer, _zapier_timer_remaining_seconds, _zapier_timer_running
+
+    with _zapier_timer_lock:
+        _zapier_timer_running = False
+        _zapier_timer_remaining_seconds = 0
+        if _zapier_timer is not None:
+            _zapier_timer.cancel()
+            _zapier_timer = None
 
 
 # ------------------------------------------------------------
@@ -509,7 +669,10 @@ def generate_report(user_id: int) -> ReportGenerationResponse | JSONResponse:
 def trigger_zapier_debug_report(user_id: int = 1) -> ZapierDebugResponse | JSONResponse:
     """Dispara manualmente el flujo base hacia Zapier o devuelve un preview util."""
     try:
-        selected_user_data, dashboard_data, report, stored_path, user_portfolios = _prepare_report_artifacts(user_id)
+        result = _execute_zapier_report_flow(
+            user_id=user_id,
+            trigger_source="manual_debug",
+        )
     except LookupError as exc:
         return _build_json_error_from_encoded(user_id, str(exc))
     except ReportGenerationError as exc:
@@ -523,7 +686,15 @@ def trigger_zapier_debug_report(user_id: int = 1) -> ZapierDebugResponse | JSONR
             user_id=user_id,
         )
     except RuntimeError as exc:
-        return _build_json_error_from_encoded(user_id, str(exc))
+        message = str(exc)
+        if message.startswith("{"):
+            return _build_json_error_from_encoded(user_id, message)
+        return _error_response(
+            http_status=status.HTTP_502_BAD_GATEWAY,
+            code="zapier_delivery_failed",
+            message=message,
+            user_id=user_id,
+        )
     except Exception as exc:
         return _error_response(
             http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -532,32 +703,11 @@ def trigger_zapier_debug_report(user_id: int = 1) -> ZapierDebugResponse | JSONR
             user_id=user_id,
         )
 
-    portfolio = _build_portfolio_response(
-        dashboard_data=dashboard_data,
-        user_portfolios=user_portfolios,
-    )
-    pdf = _build_pdf_response(report=report, stored_path=stored_path)
-    zapier_payload = _build_zapier_payload(
-        user_id=user_id,
-        selected_user_data=selected_user_data,
-        portfolio=portfolio,
-        pdf=pdf,
-        report=report,
-    )
-
-    try:
-        delivery = _send_zapier_webhook(zapier_payload)
-    except RuntimeError as exc:
-        return _error_response(
-            http_status=status.HTTP_502_BAD_GATEWAY,
-            code="zapier_delivery_failed",
-            message=str(exc),
-            user_id=user_id,
-            extra={
-                "zapier_payload": zapier_payload,
-                "pdf": pdf.model_dump(),
-            },
-        )
+    selected_user_data = result["selected_user_data"]
+    portfolio = result["portfolio"]
+    pdf = result["pdf"]
+    zapier_payload = result["zapier_payload"]
+    delivery = result["delivery"]
 
     message = (
         "Preview listo para diseñar el Zap; define ZAPIER_WEBHOOK_URL con un webhook para enviar el payload real."
@@ -577,6 +727,6 @@ def trigger_zapier_debug_report(user_id: int = 1) -> ZapierDebugResponse | JSONR
         pdf=pdf,
         zapier_payload=zapier_payload,
         delivery=delivery,
-        warnings=list(report.warnings),
-        sections=list(report.sections),
+        warnings=result["warnings"],
+        sections=result["sections"],
     )
